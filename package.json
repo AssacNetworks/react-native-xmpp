@@ -1,0 +1,57 @@
+{
+  "_args": [
+    [
+      "react-native-xmpp-assac@1.0.3",
+      "C:\\Users\\Daniel\\Desktop\\assac-application"
+    ]
+  ],
+  "_from": "react-native-xmpp-assac@1.0.3",
+  "_id": "react-native-xmpp-assac@1.0.3",
+  "_inBundle": false,
+  "_integrity": "sha512-1TPCawOTH8kY+Ua8qPloiGHGTc4w//jt+ib9kTTDabDfjvq+OLMwEXec9cKKh447j19bCNSyioshKjPQkWg/cg==",
+  "_location": "/react-native-xmpp-assac",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "version",
+    "registry": true,
+    "raw": "react-native-xmpp-assac@1.0.3",
+    "name": "react-native-xmpp-assac",
+    "escapedName": "react-native-xmpp-assac",
+    "rawSpec": "1.0.3",
+    "saveSpec": null,
+    "fetchSpec": "1.0.3"
+  },
+  "_requiredBy": [
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/react-native-xmpp-assac/-/react-native-xmpp-assac-1.0.3.tgz",
+  "_shasum": "4b8fe99c2f64ba7c058fc0d50cec01fca040097e",
+  "_spec": "1.0.3",
+  "_where": "C:\\Users\\Daniel\\Desktop\\assac-application",
+  "author": {
+    "name": "Pavlo Aksonov"
+  },
+  "bugs": {
+    "url": "https://github.com/aksonov/react-native-xmpp/issues"
+  },
+  "bundleDependencies": false,
+  "deprecated": false,
+  "description": "XMPP Library for React Native",
+  "homepage": "https://github.com/aksonov/react-native-xmpp",
+  "keywords": [
+    "xmpp",
+    "react-native",
+    "xmppframework"
+  ],
+  "license": "ISC",
+  "main": "index.js",
+  "name": "react-native-xmpp-assac",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aksonov/react-native-xmpp.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "version": "1.0.4"
+}
