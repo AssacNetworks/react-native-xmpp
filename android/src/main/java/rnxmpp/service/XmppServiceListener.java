@@ -14,7 +14,7 @@ public interface XmppServiceListener {
     void onError(Exception e);
     void onLoginError(String errorMessage);
     void onLoginError(Exception e);
-    void onFileReceived(String filePath);
+    void onFileReceived(String fileUrl, String filePath);
     void onMessage(Message message);
     void onRosterReceived(Roster roster);
     void onIQ(IQ iq);

@@ -189,7 +189,7 @@ public class XmppServiceSmackImpl implements XmppService,ChatManagerListener, St
         HttpFileUploadManager manager = HttpFileUploadManager.getInstanceFor(connection);
         try {
             URL fileURL = manager.uploadFile(new File(fileURI));
-            this.xmppServiceListener.onFileReceived(fileURL.toString());
+            this.xmppServiceListener.onFileReceived(fileURL.toString(), fileURI);
         } catch (SmackException | InterruptedException | IOException | XMPPException e) {
             logger.log(Level.WARNING, "Could not upload and send file", e);
         }

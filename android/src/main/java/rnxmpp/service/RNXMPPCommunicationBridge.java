@@ -42,8 +42,9 @@ public class RNXMPPCommunicationBridge implements XmppServiceListener {
     }
 
     @Override
-    public void onFileReceived(String filePath) {
+    public void onFileReceived(String fileUrl, String filePath) {
         WritableMap presenceMap = Arguments.createMap();
+        presenceMap.putString("fileUrl", fileUrl);
         presenceMap.putString("filePath", filePath);
         sendEvent(reactContext, RNXMPP_FILE, presenceMap);
     }
