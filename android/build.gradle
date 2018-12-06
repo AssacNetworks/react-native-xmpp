@@ -15,7 +15,7 @@ android {
     buildToolsVersion "23.0.1"
 
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion 24
         targetSdkVersion 22
         versionCode 1
         versionName "1.0"
@@ -28,21 +28,33 @@ android {
 
 repositories {
     mavenCentral()
+    maven {
+        url 'http://igniterealtime.org/repo/'
+    }
+}
+
+ext {
+    smackVersion="4.4.0-alpha2-SNAPSHOT"
 }
 
 dependencies {
-    compile "com.facebook.react:react-native:+"
-    compile "org.igniterealtime.smack:smack-android:4.3.0"
+    compile 'com.facebook.react:react-native:+'
+    compile "org.igniterealtime.smack:smack-android:$smackVersion"
     // Optional for XMPPTCPConnection
-    compile "org.igniterealtime.smack:smack-tcp:4.3.0"
+    compile "org.igniterealtime.smack:smack-tcp:$smackVersion"
     // Optional for XMPP-IM (RFC 6121) support (Roster, Threaded Chats, …)
-    compile "org.igniterealtime.smack:smack-im:4.3.0"
+    compile "org.igniterealtime.smack:smack-im:$smackVersion"
     // Optional for XMPP extensions support
-    compile "org.igniterealtime.smack:smack-extensions:4.3.0"
+    compile "org.igniterealtime.smack:smack-extensions:$smackVersion"
     // Support SCRAM-SHA-1
-    compile "org.igniterealtime.smack:smack-sasl-provided:4.3.0"
-    compile "org.igniterealtime.smack:smack-experimental:4.3.0"
-
+    compile "org.igniterealtime.smack:smack-sasl-provided:$smackVersion"
+    compile "org.igniterealtime.smack:smack-experimental:$smackVersion"
+    // Support OMEMO encryption protocol
+    //    compile "org.igniterealtime.smack:smack-omemo:$smackVersion"
+    compile "org.igniterealtime.smack:smack-omemo-signal:$smackVersion"
+    compile "org.igniterealtime.smack:smack-resolver-dnsjava:$smackVersion"
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.0.1'
+    compile project(path: ':react-native-pjsip-assac')
 }
 
 configurations {

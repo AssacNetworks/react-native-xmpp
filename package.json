@@ -1,33 +1,4 @@
 {
-  "_args": [
-    [
-      "react-native-xmpp-assac@1.0.3",
-      "C:\\Users\\Daniel\\Desktop\\assac-application"
-    ]
-  ],
-  "_from": "react-native-xmpp-assac@^1.0.4",
-  "_id": "react-native-xmpp-assac@1.0.4",
-  "_inBundle": false,
-  "_integrity": "sha512-/axsxbdjwOu/VoYO9DPNe77Y844qXatVKCvxQ0HTjyuxKFrM0hsJfzVOaGKnQgQ0xPEO9sK2jxBjmimvPuyedg==",
-  "_location": "/react-native-xmpp-assac",
-  "_phantomChildren": {},
-  "_requested": {
-    "type": "range",
-    "registry": true,
-    "raw": "react-native-xmpp-assac@^1.0.4",
-    "name": "react-native-xmpp-assac",
-    "escapedName": "react-native-xmpp-assac",
-    "rawSpec": "^1.0.4",
-    "saveSpec": null,
-    "fetchSpec": "^1.0.4"
-  },
-  "_requiredBy": [
-    "/"
-  ],
-  "_resolved": "https://registry.npmjs.org/react-native-xmpp-assac/-/react-native-xmpp-assac-1.0.4.tgz",
-  "_shasum": "7c067f84c8ae0f0d9264bf771830b944ec0fc04d",
-  "_spec": "react-native-xmpp-assac@^1.0.4",
-  "_where": "C:\\Users\\Daniel\\Desktop\\assac-application",
   "author": {
     "name": "Pavlo Aksonov"
   },
@@ -53,5 +24,5 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "version": "1.0.5"
+  "version": "1.0.16"
 }

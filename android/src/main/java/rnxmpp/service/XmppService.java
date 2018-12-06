@@ -11,7 +11,7 @@ import com.facebook.react.bridge.ReadableArray;
 public interface XmppService {
 
     @ReactMethod
-    public void trustHosts(ReadableArray trustedHosts);
+    void trustHosts(ReadableArray trustedHosts);
 
     @ReactMethod
     void connect(String jid, String password, String authMethod, String hostname, Integer port);
@@ -35,5 +35,14 @@ public interface XmppService {
     void sendStanza(String stanza);
 
     @ReactMethod
+    void decryptFile(String fileURI, String key);
+
+    @ReactMethod
     void sendFile(String fileURI);
+    
+    @ReactMethod
+    void enablePushNotifications(String pushJid, String node, String secret);
+
+    @ReactMethod
+    void setupOmemo();
 }

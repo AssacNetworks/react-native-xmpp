@@ -1,6 +1,6 @@
 'use strict';
 var React = require('react-native');
-var {NativeAppEventEmitter, NativeModules} = React;
+var {DeviceEventEmitter, NativeModules} = React;
 var RNXMPP = NativeModules.RNXMPP;
 
 var map = {
@@ -12,6 +12,7 @@ var map = {
     'error': 'RNXMPPError',
     'loginError': 'RNXMPPLoginError',
     'login': 'RNXMPPLogin',
+    'omemo': 'RNXMPPOmemoInitResult',
     'roster': 'RNXMPPRoster',
     'file': 'RNXMPPFile',
 }
@@ -31,12 +32,12 @@ class XMPP {
         this.isConnected = false;
         this.isLogged = false;
         this.listeners = [
-            NativeAppEventEmitter.addListener(map.connect, this.onConnected.bind(this)),
-            NativeAppEventEmitter.addListener(map.disconnect, this.onDisconnected.bind(this)),
-            NativeAppEventEmitter.addListener(map.error, this.onError.bind(this)),
-            NativeAppEventEmitter.addListener(map.loginError, this.onLoginError.bind(this)),
-            NativeAppEventEmitter.addListener(map.login, this.onLogin.bind(this)),
-            NativeAppEventEmitter.addListener(map.file, this.onFile.bind(this)),
+            DeviceEventEmitter.addListener(map.connect, this.onConnected.bind(this)),
+            DeviceEventEmitter.addListener(map.disconnect, this.onDisconnected.bind(this)),
+            DeviceEventEmitter.addListener(map.error, this.onError.bind(this)),
+            DeviceEventEmitter.addListener(map.loginError, this.onLoginError.bind(this)),
+            DeviceEventEmitter.addListener(map.login, this.onLogin.bind(this)),
+            DeviceEventEmitter.addListener(map.file, this.onFile.bind(this)),
         ];
     }
 
@@ -71,7 +72,7 @@ class XMPP {
 
     on(type, callback){
         if (map[type]){
-            const listener = NativeAppEventEmitter.addListener(map[type], callback);
+            const listener = DeviceEventEmitter.addListener(map[type], callback);
             this.listeners.push(listener);
             return listener;
         } else {
@@ -101,12 +102,12 @@ class XMPP {
         }
 
         this.listeners = [
-            NativeAppEventEmitter.addListener(map.connect, this.onConnected.bind(this)),
-            NativeAppEventEmitter.addListener(map.disconnect, this.onDisconnected.bind(this)),
-            NativeAppEventEmitter.addListener(map.error, this.onError.bind(this)),
-            NativeAppEventEmitter.addListener(map.loginError, this.onLoginError.bind(this)),
-            NativeAppEventEmitter.addListener(map.login, this.onLogin.bind(this)),
-            NativeAppEventEmitter.addListener(map.file, this.onFile.bind(this)),
+            DeviceEventEmitter.addListener(map.connect, this.onConnected.bind(this)),
+            DeviceEventEmitter.addListener(map.disconnect, this.onDisconnected.bind(this)),
+            DeviceEventEmitter.addListener(map.error, this.onError.bind(this)),
+            DeviceEventEmitter.addListener(map.loginError, this.onLoginError.bind(this)),
+            DeviceEventEmitter.addListener(map.login, this.onLogin.bind(this)),
+            DeviceEventEmitter.addListener(map.file, this.onFile.bind(this)),
         ];
         
         LOG('All event listeners removed');
@@ -128,8 +129,16 @@ class XMPP {
         React.NativeModules.RNXMPP.message(text, user, thread);
     }
 
+    decryptFile(fileURI, key) {
+        return React.NativeModules.RNXMPP.decryptFile(fileURI, key);
+    }
+
     sendFile(fileURI) {
         return React.NativeModules.RNXMPP.sendFile(fileURI);
+    }
+
+    enablePushNotifications(pushJid, node, secret) {
+        return React.NativeModules.RNXMPP.enablePushNotifications(pushJid, node, secret);
     }
 
     sendStanza(stanza){

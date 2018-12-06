@@ -2,18 +2,30 @@ package rnxmpp.service;
 
 import android.support.annotation.Nullable;
 
+import com.facebook.react.ReactInstanceManager;
+import com.facebook.react.ReactNativeHost;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.RCTNativeAppEventEmitter;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.roster.Roster;
 import org.jivesoftware.smack.roster.RosterEntry;
 import org.jivesoftware.smack.roster.RosterGroup;
+import org.jivesoftware.smackx.omemo.OmemoMessage;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Date;
 
 import rnxmpp.utils.Parser;
 
@@ -24,16 +36,18 @@ import rnxmpp.utils.Parser;
 
 public class RNXMPPCommunicationBridge implements XmppServiceListener {
 
-    public static final String RNXMPP_ERROR =       "RNXMPPError";
+    public static final String RNXMPP_ERROR = "RNXMPPError";
     public static final String RNXMPP_LOGIN_ERROR = "RNXMPPLoginError";
-    public static final String RNXMPP_MESSAGE =     "RNXMPPMessage";
-    public static final String RNXMPP_ROSTER =      "RNXMPPRoster";
-    public static final String RNXMPP_IQ =          "RNXMPPIQ";
-    public static final String RNXMPP_PRESENCE =    "RNXMPPPresence";
-    public static final String RNXMPP_CONNECT =     "RNXMPPConnect";
-    public static final String RNXMPP_DISCONNECT =  "RNXMPPDisconnect";
-    public static final String RNXMPP_LOGIN =       "RNXMPPLogin";
-    public static final String RNXMPP_FILE =        "RNXMPPFile";
+    public static final String RNXMPP_MESSAGE = "RNXMPPMessage";
+    public static final String RNXMPP_ROSTER = "RNXMPPRoster";
+    public static final String RNXMPP_IQ = "RNXMPPIQ";
+    public static final String RNXMPP_PRESENCE = "RNXMPPPresence";
+    public static final String RNXMPP_CONNECT = "RNXMPPConnect";
+    public static final String RNXMPP_DISCONNECT = "RNXMPPDisconnect";
+    public static final String RNXMPP_LOGIN = "RNXMPPLogin";
+    public static final String RNXMPP_FILE = "RNXMPPFile";
+    public static final String RNXMPP_OMEMO_INIT_RESULT = "RNXMPPOmemoInitResult";
+    private static final String TEMP_MESSAGE_FILE = ".assactempmesssage";
 
     ReactContext reactContext;
 
@@ -42,10 +56,11 @@ public class RNXMPPCommunicationBridge implements XmppServiceListener {
     }
 
     @Override
-    public void onFileReceived(String fileUrl, String filePath) {
+    public void onFileReceived(String fileUrl, String filePath, String key) {
         WritableMap presenceMap = Arguments.createMap();
         presenceMap.putString("fileUrl", fileUrl);
         presenceMap.putString("filePath", filePath);
+        presenceMap.putString("key", key);
         sendEvent(reactContext, RNXMPP_FILE, presenceMap);
     }
 
@@ -72,6 +87,15 @@ public class RNXMPPCommunicationBridge implements XmppServiceListener {
         params.putString("body", message.getBody());
         params.putString("from", message.getFrom().toString());
         params.putString("src", message.toString());
+        sendEvent(reactContext, RNXMPP_MESSAGE, params);
+    }
+
+    @Override
+    public void onOmemoMessage(Stanza stanza, OmemoMessage.Received decryptedMessage) {
+        WritableMap params = Arguments.createMap();
+        params.putString("body", decryptedMessage.getBody());
+        params.putString("from", stanza.getFrom().toString());
+        params.putString("src", stanza.toString());
         sendEvent(reactContext, RNXMPP_MESSAGE, params);
     }
 
@@ -117,6 +141,13 @@ public class RNXMPPCommunicationBridge implements XmppServiceListener {
     }
 
     @Override
+    public void onOmemoInitResult(boolean isSuccessfulInit) {
+        WritableMap params = Arguments.createMap();
+        params.putString("isSuccssesfulInit", isSuccessfulInit ? "true" : "false");
+        sendEvent(reactContext, RNXMPP_OMEMO_INIT_RESULT, params);
+    }
+
+    @Override
     public void onDisconnect(Exception e) {
         if (e != null) {
             sendEvent(reactContext, RNXMPP_DISCONNECT, e.getLocalizedMessage());
@@ -134,8 +165,42 @@ public class RNXMPPCommunicationBridge implements XmppServiceListener {
     }
 
     void sendEvent(ReactContext reactContext, String eventName, @Nullable Object params) {
-        reactContext
-                .getJSModule(RCTNativeAppEventEmitter.class)
-                .emit(eventName, params);
+//        try
+//        {
+            reactContext
+                    .getJSModule(RCTNativeAppEventEmitter.class)
+                    .emit(eventName, params);
+//        }
+//        catch (Exception e)
+//        {
+//            try {
+//                createMessageFile(params);
+//            } catch (IOException e1) {
+//                e1.printStackTrace();
+//            }
+//        }
+
     }
+
+//    private void createMessageFile(@Nullable Object message) throws IOException {
+//        File tempFile = new File(reactContext.getCacheDir().getPath() + "/" + new Date().toString() + TEMP_MESSAGE_FILE);
+//
+//        ObjectMapper mapper = new ObjectMapper();
+//
+//        mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
+//
+//        String messageAsJson = mapper.writeValueAsString(message);
+//
+//        FileWriter writer = null;
+//        try {
+//            writer = new FileWriter(tempFile);
+//
+//            writer.write(messageAsJson);
+//
+//            writer.close();
+//
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
 }

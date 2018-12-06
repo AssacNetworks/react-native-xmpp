@@ -4,12 +4,7 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableArray;
-import org.jivesoftware.smackx.filetransfer.FileTransferManager;
-import org.jivesoftware.smackx.filetransfer.OutgoingFileTransfer;
-
 import java.util.logging.Logger;
-
-import rnxmpp.service.RNXMPPCommunicationBridge;
 import rnxmpp.service.XmppServiceSmackImpl;
 
 /**
@@ -24,7 +19,7 @@ public class RNXMPPModule extends ReactContextBaseJavaModule implements rnxmpp.s
 
     public RNXMPPModule(ReactApplicationContext reactContext) {
         super(reactContext);
-        xmppService = new XmppServiceSmackImpl(new RNXMPPCommunicationBridge(reactContext));
+        xmppService = new XmppServiceSmackImpl(getReactApplicationContext());
     }
 
     @Override
@@ -51,9 +46,22 @@ public class RNXMPPModule extends ReactContextBaseJavaModule implements rnxmpp.s
     }
 
     @ReactMethod
+    public void decryptFile(String fileURI, String key) {
+        this.xmppService.decryptFile(fileURI, key);
+    }
+
+    @ReactMethod
     public void sendFile(String fileURI) {
         this.xmppService.sendFile(fileURI);
     }
+
+    @ReactMethod
+    public void enablePushNotifications(String pushJid, String node, String secret) {
+        this.xmppService.enablePushNotifications(pushJid, node, secret);
+    }
+
+    @ReactMethod
+    public void setupOmemo() { this.xmppService.setupOmemo(); }
 
     @Override
     @ReactMethod
