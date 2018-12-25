@@ -113,6 +113,32 @@ class XMPP {
         LOG('All event listeners removed');
     }
 
+    //Really remove listeners
+    reallyRemoveListeners() {
+        for (var i = 0; i < this.listeners.length; i++) {
+            this.listeners[i].remove();
+        }
+        
+        LOG('All event listeners removed');
+    }
+
+    restartListeners() {
+        for (var i = 0; i < this.listeners.length; i++) {
+            this.listeners[i].remove();
+        }
+
+        this.listeners = [
+            DeviceEventEmitter.addListener(map.connect, this.onConnected.bind(this)),
+            DeviceEventEmitter.addListener(map.disconnect, this.onDisconnected.bind(this)),
+            DeviceEventEmitter.addListener(map.error, this.onError.bind(this)),
+            DeviceEventEmitter.addListener(map.loginError, this.onLoginError.bind(this)),
+            DeviceEventEmitter.addListener(map.login, this.onLogin.bind(this)),
+            DeviceEventEmitter.addListener(map.file, this.onFile.bind(this)),
+        ];
+        
+        LOG('All event listeners removed');
+    }
+
     trustHosts(hosts){
         React.NativeModules.RNXMPP.trustHosts(hosts);
     }

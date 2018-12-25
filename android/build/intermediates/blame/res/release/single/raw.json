@@ -1,0 +1,10 @@
+[
+    {
+        "merged": "C:\\work\\assac-application\\node_modules\\react-native-xmpp-assac\\android\\build\\intermediates\\res\\merged\\release\\raw\\ring.wav",
+        "source": "C:\\work\\assac-application\\node_modules\\react-native-pjsip-assac\\android\\build\\intermediates\\packaged_res\\release\\raw\\ring.wav"
+    },
+    {
+        "merged": "C:\\work\\assac-application\\node_modules\\react-native-xmpp-assac\\android\\build\\intermediates\\res\\merged\\release\\raw\\ringback.wav",
+        "source": "C:\\work\\assac-application\\node_modules\\react-native-pjsip-assac\\android\\build\\intermediates\\packaged_res\\release\\raw\\ringback.wav"
+    }
+]

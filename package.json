@@ -1,4 +1,27 @@
 {
+  "_from": "react-native-xmpp-assac@^1.0.16",
+  "_id": "react-native-xmpp-assac@1.0.17",
+  "_inBundle": false,
+  "_integrity": "sha512-+lEG+nMoWs4Pp0DcSSAZ5NuS3UjxCCKkbwPs0slyILvkCrsi7x6jENKhE211BFVpTUBdCCJb5P6f1TIcejPxWg==",
+  "_location": "/react-native-xmpp-assac",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "range",
+    "registry": true,
+    "raw": "react-native-xmpp-assac@^1.0.16",
+    "name": "react-native-xmpp-assac",
+    "escapedName": "react-native-xmpp-assac",
+    "rawSpec": "^1.0.16",
+    "saveSpec": null,
+    "fetchSpec": "^1.0.16"
+  },
+  "_requiredBy": [
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/react-native-xmpp-assac/-/react-native-xmpp-assac-1.0.17.tgz",
+  "_shasum": "21339269afac4bf9cf665d633158cbe33ccc6f8f",
+  "_spec": "react-native-xmpp-assac@^1.0.16",
+  "_where": "C:\\work\\assac-application",
   "author": {
     "name": "Pavlo Aksonov"
   },
@@ -24,5 +47,5 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "version": "1.0.17"
+  "version": "1.0.20"
 }

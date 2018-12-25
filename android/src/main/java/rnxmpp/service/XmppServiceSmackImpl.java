@@ -1,5 +1,14 @@
 package rnxmpp.service;
 
+import android.app.Activity;
+import android.app.ActivityManager;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Intent;
+import android.os.AsyncTask;
+import android.view.WindowManager;
+
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReadableArray;
 import com.google.gson.JsonObject;
@@ -43,35 +52,24 @@ import org.jivesoftware.smackx.omemo.trust.OmemoFingerprint;
 import org.jivesoftware.smackx.omemo.trust.OmemoTrustCallback;
 import org.jivesoftware.smackx.omemo.trust.TrustState;
 import org.jivesoftware.smackx.push_notifications.PushNotificationsManager;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.jxmpp.jid.EntityBareJid;
-import org.jxmpp.stringprep.XmppStringprepException;
 import org.jxmpp.jid.impl.JidCreate;
+import org.jxmpp.stringprep.XmppStringprepException;
 
-import android.app.ActivityManager;
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.Intent;
-import android.os.AsyncTask;
-import android.support.v7.app.NotificationCompat;
-
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.File;
 import java.net.URL;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -93,7 +91,7 @@ import static android.content.Context.NOTIFICATION_SERVICE;
  * Copyright (c) 2016. Teletronics. All rights reserved
  */
 
-public class XmppServiceSmackImpl implements XmppService,ChatManagerListener, StanzaListener, ConnectionListener, ChatMessageListener, RosterLoadedListener {
+public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, StanzaListener, ConnectionListener, ChatMessageListener, RosterLoadedListener {
     XmppServiceListener xmppServiceListener;
     Logger logger = Logger.getLogger(XmppServiceSmackImpl.class.getName());
 
@@ -108,6 +106,39 @@ public class XmppServiceSmackImpl implements XmppService,ChatManagerListener, St
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
 //    FileTransferManager manager;
 
+    private OmemoTrustCallback trustCallback = new OmemoTrustCallback() {
+        @Override
+        public TrustState getTrust(OmemoDevice device, OmemoFingerprint fingerprint) {
+            return TrustState.trusted;
+        }
+
+        @Override
+        public void setTrust(OmemoDevice device, OmemoFingerprint fingerprint, TrustState state) {
+
+        }
+    };
+
+    private OmemoMessageListener messageListener = new OmemoMessageListener() {
+        @Override
+        public void onOmemoMessageReceived(Stanza stanza, OmemoMessage.Received decryptedMessage) {
+            logger.log(Level.INFO, "in the on message receive");
+            if (decryptedMessage.isKeyTransportMessage()) {
+                return;
+            }
+
+            if (appIsInForground()) {
+                xmppServiceListener.onOmemoMessage(stanza, decryptedMessage);
+            } else {
+                insertMessageToDB(stanza, decryptedMessage);
+            }
+        }
+
+        @Override
+        public void onOmemoCarbonCopyReceived(CarbonExtension.Direction direction, Message carbonCopy, Message wrappingMessage, OmemoMessage.Received decryptedCarbonCopy) {
+
+        }
+    };
+
     public XmppServiceSmackImpl(ReactApplicationContext reactApplicationContext) {
         this.xmppServiceListener = new RNXMPPCommunicationBridge(reactApplicationContext);
         this.reactApplicationContext = reactApplicationContext;
@@ -115,7 +146,7 @@ public class XmppServiceSmackImpl implements XmppService,ChatManagerListener, St
 
     @Override
     public void trustHosts(ReadableArray trustedHosts) {
-        for(int i = 0; i < trustedHosts.size(); i++){
+        for (int i = 0; i < trustedHosts.size(); i++) {
             this.trustedHosts.add(trustedHosts.getString(i));
         }
     }
@@ -139,22 +170,21 @@ public class XmppServiceSmackImpl implements XmppService,ChatManagerListener, St
         }
 
         try {
-        if (serviceNameParts.length>1){
+            if (serviceNameParts.length > 1) {
                 confBuilder.setResource(serviceNameParts[1]);
-        } else {
-            confBuilder.setResource(Long.toHexString(Double.doubleToLongBits(Math.random())));
-        }
-        }
-         catch (XmppStringprepException e) {
+            } else {
+                confBuilder.setResource(Long.toHexString(Double.doubleToLongBits(Math.random())));
+            }
+        } catch (XmppStringprepException e) {
             e.printStackTrace();
         }
-        if (hostname != null){
+        if (hostname != null) {
             confBuilder.setHost(hostname);
         }
-        if (port != null){
+        if (port != null) {
             confBuilder.setPort(port);
         }
-        if (trustedHosts.contains(hostname) || (hostname == null && trustedHosts.contains(serviceName))){
+        if (trustedHosts.contains(hostname) || (hostname == null && trustedHosts.contains(serviceName))) {
             confBuilder.setCustomSSLContext(UnsafeSSLContext.INSTANCE.getContext());
         }
         XMPPTCPConnectionConfiguration connectionConfiguration = confBuilder.build();
@@ -169,7 +199,7 @@ public class XmppServiceSmackImpl implements XmppService,ChatManagerListener, St
         roster.addRosterLoadedListener(this);
 
         // Create the listener for file sending
-        
+
         // manager = FileTransferManager.getInstanceFor(connection);
         // manager.addFileTransferListener(new FileTransferListener() {
         //     public void fileTransferRequest(FileTransferRequest request) {
@@ -177,87 +207,61 @@ public class XmppServiceSmackImpl implements XmppService,ChatManagerListener, St
         //     try {
         //         // Accept it
         //         IncomingFileTransfer transfer = request.accept();
-        //         transfer.recieveFile(new File("/storage/emulated/0/" + request.getFileName()));
+        //          transfer.recieveFile(new File("/storage/emulated/0/" + request.getFileName()));
         //     } catch(IOException | SmackException ex) {
 
         //     }
         // }
         // });
-        
+
         new AsyncTask<Void, Void, Void>() {
 
             @Override
             protected Void doInBackground(Void... params) {
                 try {
+                    if (connection.isConnected()) {
+                        connection.disconnect();
+                    }
+
                     connection.connect().login();
 
                     SignalOmemoService.acknowledgeLicense();
-                    if(!SignalOmemoService.isServiceRegistered()) {
+                    if (!SignalOmemoService.isServiceRegistered()) {
                         SignalOmemoService.setup();
                         service = (SignalOmemoService) SignalOmemoService.getInstance();
                         service.setOmemoStoreBackend(new SignalCachingOmemoStore(new SignalFileBasedOmemoStore(new File(reactApplicationContext.getCacheDir().getPath()))));
+
+                        omemoManager = OmemoManager.getInstanceFor(connection);
+                        omemoManager.setTrustCallback(trustCallback);
+                        omemoManager.addOmemoMessageListener(messageListener);
+
+                        omemoManager.initializeAsync(new OmemoManager.InitializationFinishedCallback() {
+                            @Override
+                            public void initializationFinished(OmemoManager manager) {
+                                try {
+                                    omemoManager.purgeDeviceList();
+                                    xmppServiceListener.onOmemoInitResult(true);
+                                } catch (Exception e) {
+                                    logger.log(Level.SEVERE, "Exception: ", e);
+                                }
+                            }
+
+                            @Override
+                            public void initializationFailed(Exception cause) {
+                                xmppServiceListener.onOmemoInitResult(false);
+                            }
+                        });
+                    } else {
+                        omemoManager = OmemoManager.getInstanceFor(connection);
+                        omemoManager.setTrustCallback(trustCallback);
+                        omemoManager.addOmemoMessageListener(messageListener);
                     }
 
-                    omemoManager = OmemoManager.getInstanceFor(connection);
-                    OmemoTrustCallback trustCallback = new OmemoTrustCallback() {
-                        @Override
-                        public TrustState getTrust(OmemoDevice device, OmemoFingerprint fingerprint) {
-                            return TrustState.trusted;
-                        }
-
-                        @Override
-                        public void setTrust(OmemoDevice device, OmemoFingerprint fingerprint, TrustState state) {
-
-                        }
-                    };
-                    omemoManager.setTrustCallback(trustCallback);
-                    //Listener for incoming OMEMO messages
-                    omemoManager.addOmemoMessageListener(new OmemoMessageListener() {
-                        @Override
-                        public void onOmemoMessageReceived(Stanza stanza, OmemoMessage.Received decryptedMessage) {
-                            logger.log(Level.INFO, "in the on message receive");
-                            if (decryptedMessage.isKeyTransportMessage()) {
-                                return;
-                            }
-
-                            if (appIsInForground())
-                            {
-                                xmppServiceListener.onOmemoMessage(stanza, decryptedMessage);
-                            }
-                            else
-                            {
-                                insertMessageToDB(stanza,decryptedMessage);
-                            }
-//                            mEmitter.fireMessageReceivedEvent(new XmppMessage(decryptedMessage.getBody(), stanza.getFrom().toString(),stanza.toString()));
-                        }
-
-                        @Override
-                        public void onOmemoCarbonCopyReceived(CarbonExtension.Direction direction, Message carbonCopy, Message wrappingMessage, OmemoMessage.Received decryptedCarbonCopy) {
-
-                        }
-                    });
-
-                    omemoManager.initializeAsync(new OmemoManager.InitializationFinishedCallback() {
-                        @Override
-                        public void initializationFinished(OmemoManager manager) {
-                            try {
-//                                omemoManager.purgeDeviceList();
-                                xmppServiceListener.onOmemoInitResult(true);
-                            } catch (Exception e) {
-                                logger.log(Level.SEVERE, "Exception: ", e);
-                            }
-                        }
-
-                        @Override
-                        public void initializationFailed(Exception cause) {
-                            xmppServiceListener.onOmemoInitResult(false);
-                        }
-                    });
                 } catch (XMPPException | SmackException | InterruptedException | IOException e) {
                     logger.log(Level.SEVERE, "Could not login for user " + jidParts[0], e);
-                    if (e instanceof SASLErrorException){
+                    if (e instanceof SASLErrorException) {
                         XmppServiceSmackImpl.this.xmppServiceListener.onLoginError(((SASLErrorException) e).getSASLFailure().toString());
-                    }else{
+                    } else {
                         XmppServiceSmackImpl.this.xmppServiceListener.onError(e);
                     }
 
@@ -295,13 +299,13 @@ public class XmppServiceSmackImpl implements XmppService,ChatManagerListener, St
 //        String image = userJsonObject.get("avatar").getAsString();
         Integer recipientId = Integer.valueOf(userJsonObject.get("_id").getAsString());
 
-        int chatId = dbHelper.getChatIdForContactOfMessage(contactAsExtension,messageText,createdAt);
+        int chatId = dbHelper.getChatIdForContactOfMessage(contactAsExtension, messageText, createdAt);
 
-        dbHelper.insertMessage(messageId,messageText,createdAt,contactAsExtension,recipientId,null,chatId);
+        dbHelper.insertMessage(messageId, messageText, createdAt, contactAsExtension, recipientId, null, chatId);
 
         dbHelper.closeTransaction();
 
-        sendNotification(messageText,contactAsExtension);
+        sendNotification(messageText, contactAsExtension);
     }
 
     @Override
@@ -314,11 +318,11 @@ public class XmppServiceSmackImpl implements XmppService,ChatManagerListener, St
         if (chat == null) {
             try {
                 recipientJid = JidCreate.entityBareFrom(to);
-            if (thread == null){
+                if (thread == null) {
                     chat = chatManager.createChat(JidCreate.entityBareFrom(to), this);
-            }else{
-                chat = chatManager.createChat(JidCreate.entityBareFrom(to), thread, this);
-            }
+                } else {
+                    chat = chatManager.createChat(JidCreate.entityBareFrom(to), thread, this);
+                }
             } catch (XmppStringprepException e) {
                 e.printStackTrace();
             }
@@ -327,10 +331,9 @@ public class XmppServiceSmackImpl implements XmppService,ChatManagerListener, St
         OmemoMessage.Sent encrypted = null;
         try {
             omemoManager.requestDeviceListUpdateFor(recipientJid);
-            for (OmemoDevice device : omemoManager.getDevicesOf(recipientJid))
-            {
+            for (OmemoDevice device : omemoManager.getDevicesOf(recipientJid)) {
                 OmemoFingerprint fingerprint = omemoManager.getFingerprint(device);
-                omemoManager.trustOmemoIdentity(device,fingerprint);
+                omemoManager.trustOmemoIdentity(device, fingerprint);
             }
 
             encrypted = omemoManager.encrypt(recipientJid, text);
@@ -345,7 +348,7 @@ public class XmppServiceSmackImpl implements XmppService,ChatManagerListener, St
             System.out.println("Undecided Identities: ");
             for (OmemoDevice device : e.getUndecidedDevices()) {
                 try {
-                    omemoManager.trustOmemoIdentity(device,omemoManager.getFingerprint(device));
+                    omemoManager.trustOmemoIdentity(device, omemoManager.getFingerprint(device));
                 } catch (Exception exception) {
                     exception.printStackTrace();
                 }
@@ -356,8 +359,7 @@ public class XmppServiceSmackImpl implements XmppService,ChatManagerListener, St
             } catch (Exception e1) {
                 e1.printStackTrace();
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -371,9 +373,9 @@ public class XmppServiceSmackImpl implements XmppService,ChatManagerListener, St
         }
     }
 
-    private String generateRandomString(){
+    private String generateRandomString() {
         StringBuffer randStr = new StringBuffer();
-        for(int i=0; i < 16; i++){
+        for (int i = 0; i < 16; i++) {
             int number = getRandomNumber();
             char ch = CHAR_LIST.charAt(number);
             randStr.append(ch);
@@ -392,7 +394,7 @@ public class XmppServiceSmackImpl implements XmppService,ChatManagerListener, St
         }
     }
 
-    private void fileProcessor(int cipherMode, String key, File inputFile, File outputFile){
+    private void fileProcessor(int cipherMode, String key, File inputFile, File outputFile) {
         try {
             Key secretKey = new SecretKeySpec(key.getBytes(), "AES");
             Cipher cipher = Cipher.getInstance("AES");
@@ -481,7 +483,7 @@ public class XmppServiceSmackImpl implements XmppService,ChatManagerListener, St
         } catch (XmppStringprepException e) {
             e.printStackTrace();
         }
-        if (rosterEntry != null){
+        if (rosterEntry != null) {
             try {
                 roster.removeEntry(rosterEntry);
             } catch (SmackException.NotLoggedInException | InterruptedException | SmackException.NotConnectedException | XMPPException.XMPPErrorException | SmackException.NoResponseException e) {
@@ -511,12 +513,12 @@ public class XmppServiceSmackImpl implements XmppService,ChatManagerListener, St
     }
 
     public class StanzaPacket extends org.jivesoftware.smack.packet.Stanza {
-         private String xmlString;
+        private String xmlString;
 
-         public StanzaPacket(String xmlString) {
-             super();
-             this.xmlString = xmlString;
-         }
+        public StanzaPacket(String xmlString) {
+            super();
+            this.xmlString = xmlString;
+        }
 
         @Override
         public String toString() {
@@ -524,11 +526,11 @@ public class XmppServiceSmackImpl implements XmppService,ChatManagerListener, St
         }
 
         //         @Override
-         public XmlStringBuilder toXML() {
-             XmlStringBuilder xml = new XmlStringBuilder();
-             xml.append(this.xmlString);
-             return xml;
-         }
+        public XmlStringBuilder toXML() {
+            XmlStringBuilder xml = new XmlStringBuilder();
+            xml.append(this.xmlString);
+            return xml;
+        }
 
         @Override
         public CharSequence toXML(String enclosingNamespace) {
@@ -551,13 +553,13 @@ public class XmppServiceSmackImpl implements XmppService,ChatManagerListener, St
         chat.addMessageListener(this);
     }
 
-//    @Override
+    //    @Override
     public void processPacket(Stanza packet) throws SmackException.NotConnectedException {
-        if (packet instanceof IQ){
+        if (packet instanceof IQ) {
             this.xmppServiceListener.onIQ((IQ) packet);
-        }else if (packet instanceof Presence){
+        } else if (packet instanceof Presence) {
             this.xmppServiceListener.onPresence((Presence) packet);
-        }else{
+        } else {
             logger.log(Level.WARNING, "Got a Stanza, of unknown subclass");
         }
     }
@@ -597,17 +599,17 @@ public class XmppServiceSmackImpl implements XmppService,ChatManagerListener, St
         logger.log(Level.INFO, "Connection was closed.");
     }
 
-//    @Override
+    //    @Override
     public void reconnectionSuccessful() {
         logger.log(Level.INFO, "Did reconnect");
     }
 
-//    @Override
+    //    @Override
     public void reconnectingIn(int seconds) {
         logger.log(Level.INFO, "Reconnecting in {0} seconds", seconds);
     }
 
-//    @Override
+    //    @Override
     public void reconnectionFailed(Exception e) {
         logger.log(Level.WARNING, "Could not reconnect", e);
 
@@ -622,17 +624,28 @@ public class XmppServiceSmackImpl implements XmppService,ChatManagerListener, St
         builder.setOngoing(false);
         builder.setAutoCancel(true);
 
-        //Needs to change the XmppServiceSmackImpl.class somehow to MainActivity.class so when pressing the notification, the app will open
-        PendingIntent contentIntent = PendingIntent.getActivity(reactApplicationContext, 0,
-                new Intent(reactApplicationContext,XmppServiceSmackImpl.class), PendingIntent.FLAG_UPDATE_CURRENT);
+        final Activity activity = reactApplicationContext.getCurrentActivity();
 
-        builder.setContentIntent(contentIntent);
+        if (activity != null) {
+//        //Needs to change the XmppServiceSmackImpl.class somehow to MainActivity.class so when pressing the notification, the app will open
+            PendingIntent contentIntent = PendingIntent.getActivity(reactApplicationContext, 0,
+                    new Intent(reactApplicationContext, activity.getClass()), PendingIntent.FLAG_UPDATE_CURRENT);
+
+            builder.setContentIntent(contentIntent);
+
+            activity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+                }
+            });
+        }
 
         NotificationManager notificationManager = (NotificationManager) reactApplicationContext.getSystemService(NOTIFICATION_SERVICE);
 
         Notification notification = builder.build();
         notification.defaults |= Notification.DEFAULT_SOUND;
-        long[] vibrate = {0,100,200,300};
+        long[] vibrate = {0, 100, 200, 300};
         notification.vibrate = vibrate;
 
         notificationManager.notify(1, notification);

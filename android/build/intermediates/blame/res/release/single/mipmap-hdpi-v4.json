@@ -1,0 +1,18 @@
+[
+    {
+        "merged": "C:\\work\\assac-application\\node_modules\\react-native-xmpp-assac\\android\\build\\intermediates\\res\\merged\\release\\mipmap-hdpi-v4\\ic_launcher.png",
+        "source": "C:\\work\\assac-application\\node_modules\\react-native-xmpp-assac\\android\\src\\main\\res\\mipmap-hdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "C:\\work\\assac-application\\node_modules\\react-native-xmpp-assac\\android\\build\\intermediates\\res\\merged\\release\\mipmap-hdpi-v4\\ic_launcher_round.png",
+        "source": "C:\\work\\assac-application\\node_modules\\react-native-xmpp-assac\\android\\src\\main\\res\\mipmap-hdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\work\\assac-application\\node_modules\\react-native-xmpp-assac\\android\\build\\intermediates\\res\\merged\\release\\mipmap-hdpi-v4\\ic_notification.png",
+        "source": "C:\\work\\assac-application\\node_modules\\react-native-xmpp-assac\\android\\src\\main\\res\\mipmap-hdpi\\ic_notification.png"
+    },
+    {
+        "merged": "C:\\work\\assac-application\\node_modules\\react-native-xmpp-assac\\android\\build\\intermediates\\res\\merged\\release\\mipmap-hdpi-v4\\ic_stat_icon.png",
+        "source": "C:\\work\\assac-application\\node_modules\\react-native-xmpp-assac\\android\\src\\main\\res\\mipmap-hdpi\\ic_stat_icon.png"
+    }
+]
