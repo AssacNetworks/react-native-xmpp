@@ -309,7 +309,7 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
     }
 
     @Override
-    public void message(String text, String to, String thread) {
+    public void message(String text, String to,String id, String thread) {
         String chatIdentifier = (thread == null ? to : thread);
 
         ChatManager chatManager = ChatManager.getInstanceFor(connection);
@@ -345,7 +345,6 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
             } catch (Exception exception) {
                 logger.log(Level.SEVERE, "Exception: ", e);
             }
-            System.out.println("Undecided Identities: ");
             for (OmemoDevice device : e.getUndecidedDevices()) {
                 try {
                     omemoManager.trustOmemoIdentity(device, omemoManager.getFingerprint(device));
@@ -357,9 +356,11 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
             try {
                 encrypted = omemoManager.encrypt(recipientJid, text);
             } catch (Exception e1) {
+                xmppServiceListener.onOmemoOutgoingMessageResult(false,id);
                 e1.printStackTrace();
             }
         } catch (Exception e) {
+            xmppServiceListener.onOmemoOutgoingMessageResult(false,id);
             e.printStackTrace();
         }
 
@@ -367,7 +368,9 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
         if (encrypted != null) {
             try {
                 chat.sendMessage(encrypted.asMessage(recipientJid));
+                xmppServiceListener.onOmemoOutgoingMessageResult(true,id);
             } catch (SmackException | InterruptedException e) {
+                xmppServiceListener.onOmemoOutgoingMessageResult(false,id);
                 logger.log(Level.WARNING, "Could not send message", e);
             }
         }

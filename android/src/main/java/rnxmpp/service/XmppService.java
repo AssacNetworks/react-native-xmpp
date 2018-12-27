@@ -17,7 +17,7 @@ public interface XmppService {
     void connect(String jid, String password, String authMethod, String hostname, Integer port);
 
     @ReactMethod
-    void message(String text, String to, String thread);
+    void message(String text, String to,String createdAt, String thread);
 
     @ReactMethod
     void presence(String to, String type);

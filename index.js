@@ -150,9 +150,9 @@ class XMPP {
         React.NativeModules.RNXMPP.connect(username, password, auth, hostname, port);
     }
 
-    message(text, user, thread = null){
+    message(text, user,id, thread = null){
         LOG(`Message: "${text}" being sent to user: ${user}`);
-        React.NativeModules.RNXMPP.message(text, user, thread);
+        React.NativeModules.RNXMPP.message(text, user,id,thread);
     }
 
     decryptFile(fileURI, key) {

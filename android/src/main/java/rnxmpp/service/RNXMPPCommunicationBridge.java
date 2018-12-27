@@ -48,6 +48,7 @@ public class RNXMPPCommunicationBridge implements XmppServiceListener {
     public static final String RNXMPP_FILE = "RNXMPPFile";
     public static final String RNXMPP_OMEMO_INIT_RESULT = "RNXMPPOmemoInitResult";
     private static final String TEMP_MESSAGE_FILE = ".assactempmesssage";
+    public static final String RNXMPP_OMEMO_OUTGOING_MESSAGE_RESULT = "RNXMPPOmemoOutgoingMessageResult";
 
     ReactContext reactContext;
 
@@ -162,6 +163,14 @@ public class RNXMPPCommunicationBridge implements XmppServiceListener {
         params.putString("username", username);
         params.putString("password", password);
         sendEvent(reactContext, RNXMPP_LOGIN, params);
+    }
+
+    @Override
+    public void onOmemoOutgoingMessageResult(boolean isSent, String id) {
+        WritableMap params = Arguments.createMap();
+        params.putString("isSent", isSent ? "true" : "false");
+        params.putString("_id", id);
+        sendEvent(reactContext, RNXMPP_OMEMO_OUTGOING_MESSAGE_RESULT, params);
     }
 
     void sendEvent(ReactContext reactContext, String eventName, @Nullable Object params) {

@@ -26,5 +26,6 @@ public interface XmppServiceListener {
     void onOmemoInitResult(boolean isSuccessfulInit);
     void onDisconnect(Exception e);
     void onLogin(String username, String password);
+    void onOmemoOutgoingMessageResult(boolean isSent,String id);
 
 }
