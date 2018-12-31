@@ -12,6 +12,8 @@ public class MessagesDbHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "assac.db";
     private static final int DATABASE_VERSION = 1;
     public static final String EQUALS_STRING = " = ?";
+    public static final String ATTACHMENT_LAST_MESSAGE = "attachment";
+    public static final String EMPTY_STRING = "";
 
     private SQLiteDatabase writeAbleDB;
     private SQLiteDatabase readAbleDB;
@@ -65,7 +67,7 @@ public class MessagesDbHelper extends SQLiteOpenHelper {
         return getChatIdForContactOfMessage(contact,message,messageDate);
     }
 
-    public void insertMessage(String id,String text, String createdAt, String user, int recipientId, String image, int chatId)
+    public void insertMessage(String id, String text, String createdAt, String user, int recipientId, String fileUrl, int chatId, String messageKey)
     {
         ContentValues values = new ContentValues();
         values.put(MessagesConsts.TEXT_COLUMN, text);
@@ -73,12 +75,12 @@ public class MessagesDbHelper extends SQLiteOpenHelper {
         values.put(MessagesConsts.CREATED_AT_COLUMN, createdAt);
         values.put(MessagesConsts.USER_COLUMN, user);
         values.put(MessagesConsts.RECIPIENT_ID_COLUMN, recipientId);
-//        values.put(MessagesConsts.IMAGE_COLUMN, image);
+        values.put(MessagesConsts.FILE_URL_COLOUMN, fileUrl);
         values.put(MessagesConsts.CHAT_ID_COLUMN, chatId);
+        values.put(MessagesConsts.KEY_COLUMN, messageKey);
 
         writeAbleDB.insert(MessagesConsts.TABLE_NAME,null, values);
     }
-
     public void insertChat( String contact, String lastMessage, String LastMessageDate)
     {
         ContentValues values = new ContentValues();
@@ -92,7 +94,7 @@ public class MessagesDbHelper extends SQLiteOpenHelper {
     public void updateChat(int chatId, String lastMessage, String lastMessageDate)
     {
         ContentValues values = new ContentValues();
-        values.put(ChatConsts.LAST_MESSAGE_COLUMN, lastMessage);
+        values.put(ChatConsts.LAST_MESSAGE_COLUMN, lastMessage.equals(EMPTY_STRING) ? ATTACHMENT_LAST_MESSAGE : lastMessage);
         values.put(ChatConsts.LAST_MESSAGE_DATE_COLUMN, lastMessageDate);
 
         String selection = ChatConsts.ID_COLUMN + EQUALS_STRING;

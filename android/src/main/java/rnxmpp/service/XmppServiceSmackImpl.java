@@ -296,16 +296,25 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
         String messageText = messageJsonObject.get("text").getAsString();
         String createdAt = messageJsonObject.get("createdAt").getAsString();
         String messageId = messageJsonObject.get("_id").getAsString();
-//        String image = userJsonObject.get("avatar").getAsString();
+        String messageUrl = null;
+        String messageKey = null;
         Integer recipientId = Integer.valueOf(userJsonObject.get("_id").getAsString());
+
+        try{
+            messageUrl = messageJsonObject.get("url").getAsString();
+            messageKey = messageJsonObject.get("key").getAsString();
+        }
+        catch (Exception e)
+        {
+        }
 
         int chatId = dbHelper.getChatIdForContactOfMessage(contactAsExtension, messageText, createdAt);
 
-        dbHelper.insertMessage(messageId, messageText, createdAt, contactAsExtension, recipientId, null, chatId);
+        dbHelper.insertMessage(messageId, messageText, createdAt, contactAsExtension, recipientId, messageUrl, chatId,messageKey);
 
         dbHelper.closeTransaction();
 
-        sendNotification(messageText, contactAsExtension);
+        sendNotification(messageText, contactAsExtension,messageUrl != null);
     }
 
     @Override
@@ -618,12 +627,12 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
 
     }
 
-    public void sendNotification(String text, String from) {
+    public void sendNotification(String text, String from, boolean isFile) {
 
         android.support.v4.app.NotificationCompat.Builder builder = new android.support.v4.app.NotificationCompat.Builder(reactApplicationContext);
         builder.setSmallIcon(R.mipmap.ic_launcher);
         builder.setContentTitle("You've got a new message");
-        builder.setContentText(from + ": " + text);
+        builder.setContentText(isFile ? from + " sent you a file " : from + ": " + text);
         builder.setOngoing(false);
         builder.setAutoCancel(true);
 
