@@ -42,6 +42,7 @@ import org.jivesoftware.smackx.carbons.packet.CarbonExtension;
 import org.jivesoftware.smackx.httpfileupload.HttpFileUploadManager;
 import org.jivesoftware.smackx.omemo.OmemoManager;
 import org.jivesoftware.smackx.omemo.OmemoMessage;
+import org.jivesoftware.smackx.omemo.OmemoService;
 import org.jivesoftware.smackx.omemo.exceptions.UndecidedOmemoIdentityException;
 import org.jivesoftware.smackx.omemo.internal.OmemoDevice;
 import org.jivesoftware.smackx.omemo.listener.OmemoMessageListener;
@@ -68,6 +69,7 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -104,6 +106,8 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
     private ReactApplicationContext reactApplicationContext;
     private final String CHAR_LIST =
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+    private HashMap<Chat,Message> lostMessages = null;
+    private boolean isOmemoInitialized = false;
 //    FileTransferManager manager;
 
     private OmemoTrustCallback trustCallback = new OmemoTrustCallback() {
@@ -223,6 +227,11 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
                         connection.disconnect();
                     }
 
+                    if (lostMessages == null)
+                    {
+                        lostMessages = new HashMap<>();
+                    }
+
                     connection.connect().login();
 
                     SignalOmemoService.acknowledgeLicense();
@@ -239,7 +248,11 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
                             @Override
                             public void initializationFinished(OmemoManager manager) {
                                 try {
+                                    isOmemoInitialized = true;
                                     omemoManager.purgeDeviceList();
+
+                                    sendLostMessages();
+
                                     xmppServiceListener.onOmemoInitResult(true);
                                 } catch (Exception e) {
                                     logger.log(Level.SEVERE, "Exception: ", e);
@@ -271,6 +284,17 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
                 return null;
             }
 
+            private void sendLostMessages() throws SmackException.NotLoggedInException {
+                if (lostMessages.size() > 0)
+                {
+                    OmemoService omemoService = OmemoService.getInstance();
+                    for (HashMap.Entry<Chat, Message> entry : lostMessages.entrySet()) {
+                        omemoService.onOmemoMessageStanzaReceived(entry.getValue(),  new OmemoManager.LoggedInOmemoManager(omemoManager));
+                    }
+                    lostMessages = null;
+                }
+            }
+
             @Override
             protected void onPostExecute(Void dummy) {
 
@@ -296,16 +320,25 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
         String messageText = messageJsonObject.get("text").getAsString();
         String createdAt = messageJsonObject.get("createdAt").getAsString();
         String messageId = messageJsonObject.get("_id").getAsString();
-//        String image = userJsonObject.get("avatar").getAsString();
+        String messageUrl = null;
+        String messageKey = null;
         Integer recipientId = Integer.valueOf(userJsonObject.get("_id").getAsString());
+
+        try{
+            messageUrl = messageJsonObject.get("url").getAsString();
+            messageKey = messageJsonObject.get("key").getAsString();
+        }
+        catch (Exception e)
+        {
+        }
 
         int chatId = dbHelper.getChatIdForContactOfMessage(contactAsExtension, messageText, createdAt);
 
-        dbHelper.insertMessage(messageId, messageText, createdAt, contactAsExtension, recipientId, null, chatId);
+        dbHelper.insertMessage(messageId, messageText, createdAt, contactAsExtension, recipientId, messageUrl, chatId,messageKey);
 
         dbHelper.closeTransaction();
 
-        sendNotification(messageText, contactAsExtension);
+        sendNotification(messageText, contactAsExtension,messageUrl != null);
     }
 
     @Override
@@ -579,7 +612,11 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
 
     @Override
     public void processMessage(Chat chat, Message message) {
-        // this.xmppServiceListener.onMessage(message);
+        //Meaning message was received before omemo initialized
+        if (!isOmemoInitialized)
+        {
+            lostMessages.put(chat,message);
+        }
     }
 
     @Override
@@ -618,12 +655,12 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
 
     }
 
-    public void sendNotification(String text, String from) {
+    public void sendNotification(String text, String from, boolean isFile) {
 
         android.support.v4.app.NotificationCompat.Builder builder = new android.support.v4.app.NotificationCompat.Builder(reactApplicationContext);
         builder.setSmallIcon(R.mipmap.ic_launcher);
         builder.setContentTitle("You've got a new message");
-        builder.setContentText(from + ": " + text);
+        builder.setContentText(isFile ? from + " sent you a file " : from + ": " + text);
         builder.setOngoing(false);
         builder.setAutoCancel(true);
 
