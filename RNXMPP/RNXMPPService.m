@@ -5,6 +5,7 @@
 #import "XMPPLogging.h"
 #import "XMPPReconnect.h"
 #import "XMPPUser.h"
+#import "OMEMOModule.h"
 #import <CocoaLumberjack/DDLog.h>
 #import "DDTTYLogger.h"
 #import <CFNetwork/CFNetwork.h>
@@ -173,6 +174,15 @@ static DDLogLevel ddLogLevel = DDLogLevelInfo;
 
     [xmppStream addDelegate:self delegateQueue:dispatch_get_main_queue()];
 
+    // OMEMO
+    omemoStorage = [OMEMOStorage alloc];
+    //    self.omemoSignalCoordinator = [[OTROMEMOSignalCoordinator alloc] initWithAccountYapKey:self.account.uniqueId databaseConnection:self.databaseConnection messageStorage:self.messageStorage roomManager:self.roomManager error:nil];
+    omemoModule = [[OMEMOModule alloc] initWithOMEMOStorage:omemoStorage xmlNamespace:OMEMOModuleNamespaceConversationsLegacy];
+    
+    [omemoModule addDelegate:self delegateQueue:dispatch_get_main_queue()];
+    //    [self.serverCheck.xmppCapabilities addDelegate:self.omemoModule delegateQueue:self.workQueue];
+    [omemoModule activate:self.xmppStream];
+
     // Optional:
     //
     // Replace me with the proper domain and port.
@@ -254,6 +264,10 @@ static DDLogLevel ddLogLevel = DDLogLevelInfo;
 #pragma mark Connect/disconnect
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+- (void)socket:(GCDAsyncSocket *)sock didAcceptNewSocket:(GCDAsyncSocket *)newSocket {
+    //[_socketsArray addObject:newSocket];
+}
+
 - (BOOL)connect:(NSString *)myJID withPassword:(NSString *)myPassword auth:(AuthMethod)auth hostname:(NSString *)hostname port:(int)port
 {
     if (![xmppStream isDisconnected]) {
@@ -273,6 +287,8 @@ static DDLogLevel ddLogLevel = DDLogLevelInfo;
     if(port){
         xmppStream.hostPort = port;
     }
+    
+    xmppStream.startTLSPolicy = XMPPStreamStartTLSPolicyRequired;
 
     NSError *error = nil;
     if (port == 5223) {
@@ -455,7 +471,8 @@ static DDLogLevel ddLogLevel = DDLogLevelInfo;
     }
 
     [self goOnline];
-    [self.delegate onLogin:username password:password];
+    //[self.delegate onLogin:username password:password];
+    [self.delegate onOmemoInitResult:true];
 }
 
 - (void)xmppStream:(XMPPStream *)sender didNotAuthenticate:(NSXMLElement *)error

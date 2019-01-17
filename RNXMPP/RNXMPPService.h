@@ -19,6 +19,7 @@
 #import "RNXMPPConstants.h"
 #import "XMPPStreamManagement.h"
 #import "XMPPStreamManagementMemoryStorage.h"
+#import "OMEMOStorage.h"
 
 @protocol RNXMPPServiceDelegate <NSObject>
 
@@ -29,6 +30,7 @@
 -(void)onRosterReceived:(NSArray *)list;
 -(void)onDisconnect:(NSError *)error;
 -(void)onConnnect:(NSString *)username password:(NSString *)password;
+-(void)onOmemoInitResult:(BOOL)isSuccessfulInit;
 -(void)onLogin:(NSString *)username password:(NSString *)password;
 -(void)onLoginError:(NSError *)error;
 
@@ -40,6 +42,8 @@
     XMPPRoster *xmppRoster;
     XMPPRosterMemoryStorage *xmppRosterStorage;
     XMPPReconnect *xmppReconnect;
+    OMEMOModule *omemoModule;
+    OMEMOStorage *omemoStorage;
     XMPPStreamManagement *xmppStreamManagement;
     id<XMPPStreamManagementStorage> xmppStreamManagentStorage;
     XMPPMUC *xmppMUC;

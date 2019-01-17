@@ -99,6 +99,10 @@ RCT_EXPORT_MODULE();
     [self.bridge.eventDispatcher sendAppEventWithName:@"RNXMPPConnect" body:@{@"username":username, @"password":password}];
 }
 
+-(void)onOmemoInitResult:(BOOL)isSuccessfulInit {
+    [self.bridge.eventDispatcher sendAppEventWithName:@"RNXMPPOmemoInitResult" body:@{@"isSuccssesfulInit":(isSuccessfulInit?@"true":@"false")}];
+}
+
 -(void)onDisconnect:(NSError *)error {
     [self.bridge.eventDispatcher sendAppEventWithName:@"RNXMPPDisconnect" body:[error localizedDescription]];
     if ([error localizedDescription]){
