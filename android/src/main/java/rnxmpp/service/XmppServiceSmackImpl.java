@@ -241,7 +241,7 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
                         @Override
                         public void onReceiptReceived(Jid fromJid, Jid toJid, String receiptId, Stanza receipt) {
                             logger.log(Level.WARNING, "recepit ");
-                            XmppServiceSmackImpl.this.xmppServiceListener.onMessageReceipt(receipt);
+                            XmppServiceSmackImpl.this.xmppServiceListener.onMessageReceipt(receiptId);
                         }
                     });
 

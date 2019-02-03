@@ -102,9 +102,9 @@ public class RNXMPPCommunicationBridge implements XmppServiceListener {
     }
 
     @Override
-    public void onMessageReceipt(Stanza recepit) {
+    public void onMessageReceipt(String receiptId) {
         WritableMap params = Arguments.createMap();
-       params.putString("recepitId", recepit);
+       params.putString("recepitId", receiptId);
         sendEvent(reactContext, RNXMPP_RECEPIT, params);
     }
 
