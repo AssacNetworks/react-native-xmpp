@@ -47,6 +47,7 @@ public class RNXMPPCommunicationBridge implements XmppServiceListener {
     public static final String RNXMPP_LOGIN = "RNXMPPLogin";
     public static final String RNXMPP_FILE = "RNXMPPFile";
     public static final String RNXMPP_OMEMO_INIT_RESULT = "RNXMPPOmemoInitResult";
+    public static final String RNXMPP_RECEPIT = "RNXMPPRecepit";
     private static final String TEMP_MESSAGE_FILE = ".assactempmesssage";
     public static final String RNXMPP_OMEMO_OUTGOING_MESSAGE_RESULT = "RNXMPPOmemoOutgoingMessageResult";
 
@@ -98,6 +99,13 @@ public class RNXMPPCommunicationBridge implements XmppServiceListener {
         params.putString("from", stanza.getFrom().toString());
         params.putString("src", stanza.toString());
         sendEvent(reactContext, RNXMPP_MESSAGE, params);
+    }
+
+    @Override
+    public void onMessageReceipt(Stanza recepit) {
+        WritableMap params = Arguments.createMap();
+       params.putString("recepitId", recepit);
+        sendEvent(reactContext, RNXMPP_RECEPIT, params);
     }
 
     @Override
