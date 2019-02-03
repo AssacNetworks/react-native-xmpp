@@ -411,7 +411,9 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
         //send
         if (encrypted != null) {
             try {
-                chat.sendMessage(encrypted.asMessage(recipientJid));
+                Message message = encrypted.asMessage(recipientJid);
+                message.setStanzaId(id);
+                chat.sendMessage(message);
                 xmppServiceListener.onOmemoOutgoingMessageResult(true,id);
             } catch (SmackException | InterruptedException e) {
                 xmppServiceListener.onOmemoOutgoingMessageResult(false,id);
