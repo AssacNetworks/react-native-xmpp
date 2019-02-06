@@ -31,6 +31,7 @@ import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.packet.Stanza;
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.roster.Roster;
 import org.jivesoftware.smack.roster.RosterEntry;
 import org.jivesoftware.smack.roster.RosterLoadedListener;
@@ -54,6 +55,7 @@ import org.jivesoftware.smackx.omemo.trust.OmemoTrustCallback;
 import org.jivesoftware.smackx.omemo.trust.TrustState;
 import org.jivesoftware.smackx.push_notifications.PushNotificationsManager;
 import org.jxmpp.jid.EntityBareJid;
+import org.jxmpp.jid.Jid;
 import org.jxmpp.jid.impl.JidCreate;
 import org.jxmpp.stringprep.XmppStringprepException;
 
@@ -575,16 +577,21 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
         }
 
         //         @Override
-        public XmlStringBuilder toXML() {
-            XmlStringBuilder xml = new XmlStringBuilder();
-            xml.append(this.xmlString);
-            return xml;
-        }
+//        public XmlStringBuilder toXML() {
+//            XmlStringBuilder xml = new XmlStringBuilder();
+//            xml.append(this.xmlString);
+//            return xml;
+//        }
 
         @Override
-        public CharSequence toXML(String enclosingNamespace) {
+        public CharSequence toXML(XmlEnvironment xmlEnvironment) {
             return null;
         }
+
+//        @Override
+//        public CharSequence toXML(String enclosingNamespace) {
+//            return null;
+//        }
     }
 
     @Override
