@@ -31,6 +31,7 @@ import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.packet.Stanza;
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.roster.Roster;
 import org.jivesoftware.smack.roster.RosterEntry;
 import org.jivesoftware.smack.roster.RosterLoadedListener;
@@ -566,6 +567,11 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
             XmlStringBuilder xml = new XmlStringBuilder();
             xml.append(this.xmlString);
             return xml;
+        }
+
+        @Override
+        public CharSequence toXML(XmlEnvironment xmlEnvironment) {
+            return toXML().toString();
         }
 
         @Override
