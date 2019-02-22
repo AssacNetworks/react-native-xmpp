@@ -5,6 +5,7 @@ var RNXMPP = NativeModules.RNXMPP;
 
 var map = {
     'message' : 'RNXMPPMessage',
+    'notificationOpened' : 'RNXMPPNotificationOpened',
     'iq': 'RNXMPPIQ',
     'presence': 'RNXMPPPresence',
     'connect': 'RNXMPPConnect',
@@ -169,6 +170,14 @@ class XMPP {
 
     sendStanza(stanza){
         RNXMPP.sendStanza(stanza);
+    }
+
+    displayNotification(text, from, isFile) {
+        React.NativeModules.RNXMPP.displayNotification(text, from, isFile);
+    }
+
+    clearAllNotifications() {
+        React.NativeModules.RNXMPP.clearAllNotifications();
     }
 
     fetchRoster(){

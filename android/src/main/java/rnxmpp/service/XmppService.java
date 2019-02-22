@@ -45,4 +45,10 @@ public interface XmppService {
 
     @ReactMethod
     void setupOmemo();
+
+    @ReactMethod
+    void displayNotification(String text, String from, boolean isFile);
+
+    @ReactMethod
+    void clearAllNotifications();
 }

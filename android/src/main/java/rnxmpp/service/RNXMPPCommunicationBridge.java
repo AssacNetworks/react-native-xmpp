@@ -39,6 +39,7 @@ public class RNXMPPCommunicationBridge implements XmppServiceListener {
     public static final String RNXMPP_ERROR = "RNXMPPError";
     public static final String RNXMPP_LOGIN_ERROR = "RNXMPPLoginError";
     public static final String RNXMPP_MESSAGE = "RNXMPPMessage";
+    public static final String RNXMPP_NOTIFICATION_OPENED = "RNXMPPNotificationOpened";
     public static final String RNXMPP_ROSTER = "RNXMPPRoster";
     public static final String RNXMPP_IQ = "RNXMPPIQ";
     public static final String RNXMPP_PRESENCE = "RNXMPPPresence";
@@ -98,6 +99,13 @@ public class RNXMPPCommunicationBridge implements XmppServiceListener {
         params.putString("from", stanza.getFrom().toString());
         params.putString("src", stanza.toString());
         sendEvent(reactContext, RNXMPP_MESSAGE, params);
+    }
+
+    @Override
+    public void onNotificationOpened(String from) {
+        WritableMap params = Arguments.createMap();
+        params.putString("from", from);
+        sendEvent(reactContext, RNXMPP_NOTIFICATION_OPENED, params);
     }
 
     @Override

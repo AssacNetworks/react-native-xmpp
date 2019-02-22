@@ -19,6 +19,7 @@ public interface XmppServiceListener {
     void onFileReceived(String fileUrl, String filePath, String key);
     void onMessage(Message message);
     void onOmemoMessage(Stanza stanza, OmemoMessage.Received decryptedMessage);
+    void onNotificationOpened(String from);
     void onRosterReceived(Roster roster);
     void onIQ(IQ iq);
     void onPresence(Presence presence);
