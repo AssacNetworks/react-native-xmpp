@@ -672,19 +672,7 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
         createNotificationChannel();
 
         int requestID = (int) System.currentTimeMillis();
-
-        PackageManager pm = reactApplicationContext.getPackageManager();
-        Intent notificationIntent = pm.getLaunchIntentForPackage(reactApplicationContext.getPackageName());
-        notificationIntent.putExtra(EXTRA_CHAT_FROM, from);
-        notificationIntent.putExtra(EXTRA_NOTIFICATION_ID, from);
-        notificationIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-
-        PendingIntent contentIntent = PendingIntent.getActivity(
-                reactApplicationContext,
-                requestID,
-                notificationIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT
-        );
+        PendingIntent contentIntent = createChatMessagePendingIntent(from, requestID);
 
         NotificationCompat.Builder publicBuilder =
                 new NotificationCompat.Builder(reactApplicationContext, NOTIFICATION_CHANNEL_ID)
@@ -747,6 +735,7 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
     }
 
     private void createChatSummaryNotification(NotificationManagerCompat notificationManager) {
+        PendingIntent contentIntent = createChatMessagePendingIntent("", SUMMARY_NOTIFICATION_ID);
         NotificationCompat.Builder publicBuilder =
                 new NotificationCompat.Builder(reactApplicationContext, NOTIFICATION_CHANNEL_ID)
                         .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -761,10 +750,26 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
                         .setStyle(new NotificationCompat.InboxStyle())
                         .setGroup(NOTIFICATION_GROUP_KEY)
                         .setGroupSummary(true)
+                        .setContentIntent(contentIntent)
                         .setPublicVersion(publicBuilder.build())
                         .build();
 
         notificationManager.notify(SUMMARY_NOTIFICATION_ID, summaryNotification);
+    }
+
+    private PendingIntent createChatMessagePendingIntent(String from, int requestID) {
+        PackageManager pm = reactApplicationContext.getPackageManager();
+        Intent notificationIntent = pm.getLaunchIntentForPackage(reactApplicationContext.getPackageName());
+        notificationIntent.putExtra(EXTRA_CHAT_FROM, from);
+        notificationIntent.putExtra(EXTRA_NOTIFICATION_ID, requestID);
+        notificationIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
+        return PendingIntent.getActivity(
+                reactApplicationContext,
+                requestID,
+                notificationIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT
+        );
     }
 
     public void handleIntent(Intent intent) {
