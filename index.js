@@ -15,6 +15,7 @@ var map = {
     'login': 'RNXMPPLogin',
     'omemo': 'RNXMPPOmemoInitResult',
     'roster': 'RNXMPPRoster',
+    'recepit': 'RNXMPPRecepit',
     'file': 'RNXMPPFile',
 }
 
@@ -38,6 +39,7 @@ class XMPP {
             DeviceEventEmitter.addListener(map.error, this.onError.bind(this)),
             DeviceEventEmitter.addListener(map.loginError, this.onLoginError.bind(this)),
             DeviceEventEmitter.addListener(map.login, this.onLogin.bind(this)),
+            DeviceEventEmitter.addListener(map.recepit, this.onRecepit.bind(this)),
             DeviceEventEmitter.addListener(map.file, this.onFile.bind(this)),
         ];
     }
@@ -49,6 +51,10 @@ class XMPP {
     onConnected(){
         LOG("Connected");
         this.isConnected = true;
+    }
+
+    onRecepit(recepit) {
+        LOG("message Recepit: " + recepit);
     }
 
     onLogin(){
@@ -109,6 +115,7 @@ class XMPP {
             DeviceEventEmitter.addListener(map.loginError, this.onLoginError.bind(this)),
             DeviceEventEmitter.addListener(map.login, this.onLogin.bind(this)),
             DeviceEventEmitter.addListener(map.file, this.onFile.bind(this)),
+            DeviceEventEmitter.addListener(map.recepit, this.onRecepit.bind(this)),
         ];
         
         LOG('All event listeners removed');

@@ -60,6 +60,7 @@ import org.jivesoftware.smackx.omemo.trust.OmemoTrustCallback;
 import org.jivesoftware.smackx.omemo.trust.TrustState;
 import org.jivesoftware.smackx.push_notifications.PushNotificationsManager;
 import org.jxmpp.jid.EntityBareJid;
+import org.jxmpp.jid.Jid;
 import org.jxmpp.jid.impl.JidCreate;
 import org.jxmpp.stringprep.XmppStringprepException;
 
@@ -93,6 +94,7 @@ import rnxmpp.ssl.UnsafeSSLContext;
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE;
 import static android.content.Context.NOTIFICATION_SERVICE;
+import org.jivesoftware.smackx.receipts.*;
 
 /**
  * Created by Kristian Frølund on 7/19/16.
@@ -102,7 +104,7 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
 
     XmppServiceListener xmppServiceListener;
     Logger logger = Logger.getLogger(XmppServiceSmackImpl.class.getName());
-
+    DeliveryReceiptManager deliveryReceiptManager;
     OmemoManager omemoManager;
     SignalOmemoService service;
     XMPPTCPConnection connection;
@@ -237,6 +239,16 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
                     }
 
                     connection.connect().login();
+
+                    DeliveryReceiptManager.getInstanceFor(connection).setAutoReceiptMode(DeliveryReceiptManager.AutoReceiptMode.always);
+                    deliveryReceiptManager.getInstanceFor(connection).autoAddDeliveryReceiptRequests();
+                    deliveryReceiptManager.getInstanceFor(connection).addReceiptReceivedListener(new ReceiptReceivedListener() {
+                        @Override
+                        public void onReceiptReceived(Jid fromJid, Jid toJid, String receiptId, Stanza receipt) {
+                            logger.log(Level.WARNING, "recepit ");
+                            XmppServiceSmackImpl.this.xmppServiceListener.onMessageReceipt(receiptId);
+                        }
+                    });
 
                     SignalOmemoService.acknowledgeLicense();
                     if (!SignalOmemoService.isServiceRegistered()) {
@@ -401,8 +413,10 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
         //send
         if (encrypted != null) {
             try {
-                chat.sendMessage(encrypted.asMessage(recipientJid));
-                xmppServiceListener.onOmemoOutgoingMessageResult(true, id);
+                Message message = encrypted.asMessage(recipientJid);
+                message.setStanzaId(id);
+                chat.sendMessage(message);
+                xmppServiceListener.onOmemoOutgoingMessageResult(true,id);
             } catch (SmackException | InterruptedException e) {
                 xmppServiceListener.onOmemoOutgoingMessageResult(false, id);
                 logger.log(Level.WARNING, "Could not send message", e);
@@ -563,11 +577,11 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
         }
 
         //         @Override
-        public XmlStringBuilder toXML() {
-            XmlStringBuilder xml = new XmlStringBuilder();
-            xml.append(this.xmlString);
-            return xml;
-        }
+//        public XmlStringBuilder toXML() {
+//            XmlStringBuilder xml = new XmlStringBuilder();
+//            xml.append(this.xmlString);
+//            return xml;
+//        }
 
         @Override
         public CharSequence toXML(XmlEnvironment xmlEnvironment) {
@@ -578,6 +592,11 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
         public CharSequence toXML(String enclosingNamespace) {
             return null;
         }
+
+//        @Override
+//        public CharSequence toXML(String enclosingNamespace) {
+//            return null;
+//        }
     }
 
     @Override

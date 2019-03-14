@@ -8,17 +8,18 @@
 
 #import <Foundation/Foundation.h>
 
-#import "XMPP.h"
-#import "XMPPReconnect.h"
-#import "XMPPDateTimeProfiles.h"
-#import "NSDate+XMPPDateTimeProfiles.h"
-#import "XMPPMUC.h"
-#import "XMPPRoom.h"
-#import "XMPPRoster.h"
-#import "XMPPRosterMemoryStorage.h"
+#import "XMPPFramework/XMPP.h"
+//#import "XMPP.h"
+#import "XMPPFramework/XMPPReconnect.h"
+#import "XMPPFramework/XMPPDateTimeProfiles.h"
+#import "XMPPFramework/NSDate+XMPPDateTimeProfiles.h"
+#import "XMPPFramework/XMPPMUC.h"
+#import "XMPPFramework/XMPPRoom.h"
+#import "XMPPFramework/XMPPRoster.h"
+#import "XMPPFramework/XMPPRosterMemoryStorage.h"
 #import "RNXMPPConstants.h"
-#import "XMPPStreamManagement.h"
-#import "XMPPStreamManagementMemoryStorage.h"
+#import "XMPPFramework/XMPPStreamManagement.h"
+#import "XMPPFramework/XMPPStreamManagementMemoryStorage.h"
 #import "OMEMOStorage.h"
 
 @protocol RNXMPPServiceDelegate <NSObject>

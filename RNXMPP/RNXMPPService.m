@@ -1,13 +1,14 @@
 #import "RNXMPPService.h"
 
+@import CocoaAsyncSocket;
 #import "GCDAsyncSocket.h"
-#import "XMPP.h"
-#import "XMPPLogging.h"
-#import "XMPPReconnect.h"
-#import "XMPPUser.h"
-#import "OMEMOModule.h"
+#import "XMPPFramework/XMPP.h"
+#import "XMPPFramework/XMPPLogging.h"
+#import "XMPPFramework/XMPPReconnect.h"
+#import "XMPPFramework/XMPPUser.h"
+#import "XMPPFramework/OMEMOModule.h"
 #import <CocoaLumberjack/DDLog.h>
-#import "DDTTYLogger.h"
+#import "CocoaLumberjack/DDTTYLogger.h"
 #import <CFNetwork/CFNetwork.h>
 
 // Log levels: off, error, warn, info, verbose
@@ -273,7 +274,11 @@ static DDLogLevel ddLogLevel = DDLogLevelInfo;
     if (![xmppStream isDisconnected]) {
         [self disconnect];
     }
-
+    
+    port = 5222;
+    myJID = @"7064@assac.phone.gs";
+    myPassword = @"Si3ds8aWq65";
+    hostname = @"assac.phone.gs";
     if (myJID == nil || myPassword == nil) {
         return NO;
     }
