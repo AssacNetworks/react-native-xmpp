@@ -3,10 +3,15 @@ package rnxmpp.service;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.AsyncTask;
+import android.os.Build;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.view.WindowManager;
 
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -80,6 +85,7 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
+import javax.xml.transform.OutputKeys;
 
 import rnxmpp.R;
 import rnxmpp.database.MessagesDbHelper;
@@ -90,13 +96,12 @@ import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIB
 import static android.content.Context.NOTIFICATION_SERVICE;
 import org.jivesoftware.smackx.receipts.*;
 
-
 /**
  * Created by Kristian Frølund on 7/19/16.
  * Copyright (c) 2016. Teletronics. All rights reserved
  */
-
 public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, StanzaListener, ConnectionListener, ChatMessageListener, RosterLoadedListener {
+
     XmppServiceListener xmppServiceListener;
     Logger logger = Logger.getLogger(XmppServiceSmackImpl.class.getName());
     DeliveryReceiptManager deliveryReceiptManager;
@@ -107,9 +112,8 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
     List<String> trustedHosts = new ArrayList<>();
     String password;
     private ReactApplicationContext reactApplicationContext;
-    private final String CHAR_LIST =
-            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-    private HashMap<Chat,Message> lostMessages = null;
+    private final String CHAR_LIST = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+    private HashMap<Chat, Message> lostMessages = null;
     private boolean isOmemoInitialized = false;
 //    FileTransferManager manager;
 
@@ -230,8 +234,7 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
                         connection.disconnect();
                     }
 
-                    if (lostMessages == null)
-                    {
+                    if (lostMessages == null) {
                         lostMessages = new HashMap<>();
                     }
 
@@ -298,11 +301,10 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
             }
 
             private void sendLostMessages() throws SmackException.NotLoggedInException {
-                if (lostMessages.size() > 0)
-                {
+                if (lostMessages.size() > 0) {
                     OmemoService omemoService = OmemoService.getInstance();
                     for (HashMap.Entry<Chat, Message> entry : lostMessages.entrySet()) {
-                        omemoService.onOmemoMessageStanzaReceived(entry.getValue(),  new OmemoManager.LoggedInOmemoManager(omemoManager));
+                        omemoService.onOmemoMessageStanzaReceived(entry.getValue(), new OmemoManager.LoggedInOmemoManager(omemoManager));
                     }
                     lostMessages = null;
                 }
@@ -337,25 +339,23 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
         String messageKey = null;
         Integer recipientId = Integer.valueOf(userJsonObject.get("_id").getAsString());
 
-        try{
+        try {
             messageUrl = messageJsonObject.get("url").getAsString();
             messageKey = messageJsonObject.get("key").getAsString();
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
         }
 
         int chatId = dbHelper.getChatIdForContactOfMessage(contactAsExtension, messageText, createdAt);
 
-        dbHelper.insertMessage(messageId, messageText, createdAt, contactAsExtension, recipientId, messageUrl, chatId,messageKey);
+        dbHelper.insertMessage(messageId, messageText, createdAt, contactAsExtension, recipientId, messageUrl, chatId, messageKey);
 
         dbHelper.closeTransaction();
 
-        sendNotification(messageText, contactAsExtension,messageUrl != null);
+        displayNotification(messageText, contactAsExtension, messageUrl != null);
     }
 
     @Override
-    public void message(String text, String to,String id, String thread) {
+    public void message(String text, String to, String id, String thread) {
         String chatIdentifier = (thread == null ? to : thread);
 
         ChatManager chatManager = ChatManager.getInstanceFor(connection);
@@ -402,11 +402,11 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
             try {
                 encrypted = omemoManager.encrypt(recipientJid, text);
             } catch (Exception e1) {
-                xmppServiceListener.onOmemoOutgoingMessageResult(false,id);
+                xmppServiceListener.onOmemoOutgoingMessageResult(false, id);
                 e1.printStackTrace();
             }
         } catch (Exception e) {
-            xmppServiceListener.onOmemoOutgoingMessageResult(false,id);
+            xmppServiceListener.onOmemoOutgoingMessageResult(false, id);
             e.printStackTrace();
         }
 
@@ -418,7 +418,7 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
                 chat.sendMessage(message);
                 xmppServiceListener.onOmemoOutgoingMessageResult(true,id);
             } catch (SmackException | InterruptedException e) {
-                xmppServiceListener.onOmemoOutgoingMessageResult(false,id);
+                xmppServiceListener.onOmemoOutgoingMessageResult(false, id);
                 logger.log(Level.WARNING, "Could not send message", e);
             }
         }
@@ -585,6 +585,11 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
 
         @Override
         public CharSequence toXML(XmlEnvironment xmlEnvironment) {
+            return toXML().toString();
+        }
+
+        @Override
+        public CharSequence toXML(String enclosingNamespace) {
             return null;
         }
 
@@ -633,9 +638,8 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
     @Override
     public void processMessage(Chat chat, Message message) {
         //Meaning message was received before omemo initialized
-        if (!isOmemoInitialized)
-        {
-            lostMessages.put(chat,message);
+        if (!isOmemoInitialized) {
+            lostMessages.put(chat, message);
         }
     }
 
@@ -675,23 +679,40 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
 
     }
 
-    public void sendNotification(String text, String from, boolean isFile) {
+    private static final String NOTIFICATION_CHANNEL_ID = "rn-push-notification-channel-id";
+    private static final String NOTIFICATION_CHANNEL_NAME = "ShieldiT Chat Channel";
+    private static final String NOTIFICATION_GROUP_KEY = "com.assacnetworks.shieldit.chat";
+    private static final String NOTIFICATION_TITLE = "You've got a new message";
+    private static final String EXTRA_CHAT_FROM = "EXTRA_CHAT_FROM";
+    private static final String EXTRA_NOTIFICATION_ID = "EXTRA_NOTIFICATION_ID";
+    private static final int SUMMARY_NOTIFICATION_ID = 111;
 
-        android.support.v4.app.NotificationCompat.Builder builder = new android.support.v4.app.NotificationCompat.Builder(reactApplicationContext);
-        builder.setSmallIcon(R.mipmap.ic_launcher);
-        builder.setContentTitle("You've got a new message");
-        builder.setContentText(isFile ? from + " sent you a file " : from + ": " + text);
-        builder.setOngoing(false);
-        builder.setAutoCancel(true);
+    public void displayNotification(String text, String from, boolean isFile) {
+        createNotificationChannel();
+
+        int requestID = (int) System.currentTimeMillis();
+        PendingIntent contentIntent = createChatMessagePendingIntent(from, requestID);
+
+        NotificationCompat.Builder publicBuilder =
+                new NotificationCompat.Builder(reactApplicationContext, NOTIFICATION_CHANNEL_ID)
+                        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                        .setSmallIcon(R.mipmap.ic_stat_icon)
+                        .setContentTitle(NOTIFICATION_TITLE)
+                        .setGroup(NOTIFICATION_GROUP_KEY);
+        NotificationCompat.Builder builder =
+                new NotificationCompat.Builder(reactApplicationContext, NOTIFICATION_CHANNEL_ID)
+                        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                        .setSmallIcon(R.mipmap.ic_stat_icon)
+                        .setContentTitle(NOTIFICATION_TITLE)
+                        .setContentText(isFile ? from + " sent you a file " : from + ": " + text)
+                        .setGroup(NOTIFICATION_GROUP_KEY)
+                        .setContentIntent(contentIntent)
+                        .setOngoing(false)
+                        .setAutoCancel(true)
+                        .setPublicVersion(publicBuilder.build());
 
         final Activity activity = reactApplicationContext.getCurrentActivity();
-
         if (activity != null) {
-//        //Needs to change the XmppServiceSmackImpl.class somehow to MainActivity.class so when pressing the notification, the app will open
-            PendingIntent contentIntent = PendingIntent.getActivity(reactApplicationContext, 0,
-                    new Intent(reactApplicationContext, activity.getClass()), PendingIntent.FLAG_UPDATE_CURRENT);
-
-            builder.setContentIntent(contentIntent);
 
             activity.runOnUiThread(new Runnable() {
                 @Override
@@ -701,14 +722,87 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
             });
         }
 
-        NotificationManager notificationManager = (NotificationManager) reactApplicationContext.getSystemService(NOTIFICATION_SERVICE);
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(reactApplicationContext);
+        notificationManager.notify(requestID, builder.build());
 
-        Notification notification = builder.build();
-        notification.defaults |= Notification.DEFAULT_SOUND;
-        long[] vibrate = {0, 100, 200, 300};
-        notification.vibrate = vibrate;
-
-        notificationManager.notify(1, notification);
+        createChatSummaryNotification(notificationManager);
     }
 
+    public void clearAllNotifications() {
+        NotificationManager notificationManager = reactApplicationContext.getSystemService(NotificationManager.class);
+        if (notificationManager != null) {
+            notificationManager.cancel(SUMMARY_NOTIFICATION_ID);
+        }
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    NOTIFICATION_CHANNEL_ID,
+                    NOTIFICATION_CHANNEL_NAME,
+                    NotificationManager.IMPORTANCE_DEFAULT
+            );
+            channel.setShowBadge(true);
+            channel.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+            channel.enableVibration(true);
+            channel.setVibrationPattern(new long[]{0, 100, 200, 300});
+            NotificationManager notificationManager = reactApplicationContext.getSystemService(NotificationManager.class);
+            if (notificationManager != null) {
+                notificationManager.createNotificationChannel(channel);
+            }
+        }
+    }
+
+    private void createChatSummaryNotification(NotificationManagerCompat notificationManager) {
+        PendingIntent contentIntent = createChatMessagePendingIntent("", SUMMARY_NOTIFICATION_ID);
+        NotificationCompat.Builder publicBuilder =
+                new NotificationCompat.Builder(reactApplicationContext, NOTIFICATION_CHANNEL_ID)
+                        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                        .setSmallIcon(R.mipmap.ic_stat_icon)
+                        .setContentTitle(NOTIFICATION_TITLE)
+                        .setGroup(NOTIFICATION_GROUP_KEY);
+        Notification summaryNotification =
+                new NotificationCompat.Builder(reactApplicationContext, NOTIFICATION_CHANNEL_ID)
+                        .setSound(null)
+                        .setVibrate(null)
+                        .setSmallIcon(R.mipmap.ic_stat_icon)
+                        .setStyle(new NotificationCompat.InboxStyle())
+                        .setGroup(NOTIFICATION_GROUP_KEY)
+                        .setGroupSummary(true)
+                        .setContentIntent(contentIntent)
+                        .setPublicVersion(publicBuilder.build())
+                        .build();
+
+        notificationManager.notify(SUMMARY_NOTIFICATION_ID, summaryNotification);
+    }
+
+    private PendingIntent createChatMessagePendingIntent(String from, int requestID) {
+        PackageManager pm = reactApplicationContext.getPackageManager();
+        Intent notificationIntent = pm.getLaunchIntentForPackage(reactApplicationContext.getPackageName());
+        notificationIntent.putExtra(EXTRA_CHAT_FROM, from);
+        notificationIntent.putExtra(EXTRA_NOTIFICATION_ID, requestID);
+        notificationIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
+        return PendingIntent.getActivity(
+                reactApplicationContext,
+                requestID,
+                notificationIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT
+        );
+    }
+
+    public void handleIntent(Intent intent) {
+        String from = intent.getStringExtra(EXTRA_CHAT_FROM);
+        if (from != null) {
+            xmppServiceListener.onNotificationOpened(from);
+        }
+
+        int notificationId = intent.getIntExtra(EXTRA_NOTIFICATION_ID, -1);
+        if (notificationId != -1) {
+            NotificationManager notificationManager = reactApplicationContext.getSystemService(NotificationManager.class);
+            if (notificationManager != null) {
+                notificationManager.cancel(notificationId);
+            }
+        }
+    }
 }

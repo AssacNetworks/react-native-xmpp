@@ -1,7 +1,7 @@
 #import "RNXMPPService.h"
 
 @import CocoaAsyncSocket;
-//#import "GCDAsyncSocket.h"
+#import "GCDAsyncSocket.h"
 #import "XMPPFramework/XMPP.h"
 #import "XMPPFramework/XMPPLogging.h"
 #import "XMPPFramework/XMPPReconnect.h"

@@ -1,5 +1,7 @@
 package rnxmpp;
 
+import android.content.Intent;
+
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
@@ -20,6 +22,10 @@ public class RNXMPPModule extends ReactContextBaseJavaModule implements rnxmpp.s
     public RNXMPPModule(ReactApplicationContext reactContext) {
         super(reactContext);
         xmppService = new XmppServiceSmackImpl(getReactApplicationContext());
+    }
+
+    public void handleIntent(Intent intent) {
+        xmppService.handleIntent(intent);
     }
 
     @Override
@@ -91,5 +97,17 @@ public class RNXMPPModule extends ReactContextBaseJavaModule implements rnxmpp.s
     @ReactMethod
     public void sendStanza(String stanza) {
         this.xmppService.sendStanza(stanza);
+    }
+
+    @Override
+    @ReactMethod
+    public void displayNotification(String text, String from, boolean isFile) {
+        this.xmppService.displayNotification(text, from, isFile);
+    }
+
+    @Override
+    @ReactMethod
+    public void clearAllNotifications() {
+        this.xmppService.clearAllNotifications();
     }
 }

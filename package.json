@@ -1,27 +1,13 @@
 {
-  "_from": "git+https://github.com/AssacNetworks/react-native-xmpp-assac.git",
-  "_id": "react-native-xmpp-assac@1.0.20",
-  "_inBundle": false,
-  "_integrity": "sha512-+lEG+nMoWs4Pp0DcSSAZ5NuS3UjxCCKkbwPs0slyILvkCrsi7x6jENKhE211BFVpTUBdCCJb5P6f1TIcejPxWg==",
-  "_location": "/react-native-xmpp-assac",
-  "_phantomChildren": {},
-  "_requested": {
-    "type": "git",
-    "raw": "react-native-xmpp-assac@git+https://github.com/AssacNetworks/react-native-xmpp-assac.git",
-    "name": "react-native-xmpp-assac",
-    "escapedName": "react-native-xmpp-assac",
-    "rawSpec": "git+https://github.com/AssacNetworks/react-native-xmpp-assac.git",
-    "saveSpec": "git+https://github.com/AssacNetworks/react-native-xmpp-assac.git",
-    "fetchSpec": "https://github.com/AssacNetworks/react-native-xmpp-assac.git",
-    "gitCommittish": null
+  "name": "react-native-xmpp-assac",
+  "version": "1.0.20",
+  "description": "XMPP Library for React Native, forked by Assac",
+  "homepage": "https://github.com/AssacNetworks/react-native-xmpp-assac",
+  "main": "index.js",
+  "repository": {
+      "type": "git",
+      "url": "git+https://github.com/AssacNetworks/react-native-xmpp-assac.git"
   },
-  "_requiredBy": [
-    "/"
-  ],
-  "_resolved": "git+https://github.com/AssacNetworks/react-native-xmpp-assac.git#bd6f77be199f697d0577a6af4db5f016cf9e320d",
-  "_shasum": "21339269afac4bf9cf665d633158cbe33ccc6f8f",
-  "_spec": "react-native-xmpp-assac@git+https://github.com/AssacNetworks/react-native-xmpp-assac.git",
-  "_where": "C:\\work\\assac-application",
   "author": {
     "name": "Pavlo Aksonov"
   },
@@ -30,22 +16,13 @@
   },
   "bundleDependencies": false,
   "deprecated": false,
-  "description": "XMPP Library for React Native",
-  "homepage": "https://github.com/aksonov/react-native-xmpp",
   "keywords": [
     "xmpp",
     "react-native",
     "xmppframework"
   ],
   "license": "ISC",
-  "main": "index.js",
-  "name": "react-native-xmpp-assac",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/aksonov/react-native-xmpp.git"
-  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "version": "1.0.20"
+  }
 }

@@ -23,7 +23,8 @@ public class RNXMPPPackage implements ReactPackage{
     public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
         List<NativeModule> modules = new ArrayList<>();
 
-        modules.add(new RNXMPPModule(reactContext));
+        _RNXMPPModule = new RNXMPPModule(reactContext);
+        modules.add(_RNXMPPModule);
 
         return modules;
     }
@@ -31,5 +32,10 @@ public class RNXMPPPackage implements ReactPackage{
     @Override
     public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
         return Collections.emptyList();
+    }
+
+    private static RNXMPPModule _RNXMPPModule = null;
+    public static RNXMPPModule getRNXMPPModule() {
+        return _RNXMPPModule;
     }
 }
