@@ -43,7 +43,6 @@ import org.jivesoftware.smack.roster.RosterLoadedListener;
 import org.jivesoftware.smack.sasl.SASLErrorException;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
-import org.jivesoftware.smack.util.XmlStringBuilder;
 import org.jivesoftware.smackx.carbons.packet.CarbonExtension;
 import org.jivesoftware.smackx.httpfileupload.HttpFileUploadManager;
 import org.jivesoftware.smackx.omemo.OmemoManager;
@@ -59,6 +58,8 @@ import org.jivesoftware.smackx.omemo.trust.OmemoFingerprint;
 import org.jivesoftware.smackx.omemo.trust.OmemoTrustCallback;
 import org.jivesoftware.smackx.omemo.trust.TrustState;
 import org.jivesoftware.smackx.push_notifications.PushNotificationsManager;
+import org.jivesoftware.smackx.receipts.DeliveryReceiptManager;
+import org.jivesoftware.smackx.receipts.ReceiptReceivedListener;
 import org.jxmpp.jid.EntityBareJid;
 import org.jxmpp.jid.Jid;
 import org.jxmpp.jid.impl.JidCreate;
@@ -76,7 +77,6 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -85,7 +85,6 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
-import javax.xml.transform.OutputKeys;
 
 import rnxmpp.R;
 import rnxmpp.database.MessagesDbHelper;
@@ -93,8 +92,6 @@ import rnxmpp.ssl.UnsafeSSLContext;
 
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE;
-import static android.content.Context.NOTIFICATION_SERVICE;
-import org.jivesoftware.smackx.receipts.*;
 
 /**
  * Created by Kristian Frølund on 7/19/16.
@@ -416,7 +413,7 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
                 Message message = encrypted.asMessage(recipientJid);
                 message.setStanzaId(id);
                 chat.sendMessage(message);
-                xmppServiceListener.onOmemoOutgoingMessageResult(true,id);
+                xmppServiceListener.onOmemoOutgoingMessageResult(true, id);
             } catch (SmackException | InterruptedException e) {
                 xmppServiceListener.onOmemoOutgoingMessageResult(false, id);
                 logger.log(Level.WARNING, "Could not send message", e);
@@ -725,7 +722,9 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(reactApplicationContext);
         notificationManager.notify(requestID, builder.build());
 
-        createChatSummaryNotification(notificationManager);
+        if (android.os.Build.VERSION.SDK_INT > android.os.Build.VERSION_CODES.M) {
+            createChatSummaryNotification(notificationManager);
+        }
     }
 
     public void clearAllNotifications() {
