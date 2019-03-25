@@ -187,6 +187,10 @@ class XMPP {
         React.NativeModules.RNXMPP.clearAllNotifications();
     }
 
+    testOpenNativeChat() {
+        React.NativeModules.RNXMPP.testOpenNativeChat();
+    }
+
     fetchRoster(){
         RNXMPP.fetchRoster();
     }

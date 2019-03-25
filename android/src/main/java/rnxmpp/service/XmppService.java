@@ -51,4 +51,7 @@ public interface XmppService {
 
     @ReactMethod
     void clearAllNotifications();
+
+    @ReactMethod
+    void testOpenNativeChat(String contact);
 }

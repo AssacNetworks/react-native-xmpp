@@ -86,6 +86,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 
+import rnxmpp.ConversationActivity;
 import rnxmpp.R;
 import rnxmpp.database.MessagesDbHelper;
 import rnxmpp.ssl.UnsafeSSLContext;
@@ -803,5 +804,14 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
                 notificationManager.cancel(notificationId);
             }
         }
+    }
+
+    public void testOpenNativeChat(String contact) {
+        Intent conversationActivity = new Intent(reactApplicationContext, ConversationActivity.class);
+        Activity currentActivity = reactApplicationContext.getCurrentActivity();
+
+        conversationActivity.putExtra("contact", contact);
+
+        currentActivity.startActivity(conversationActivity);
     }
 }

@@ -110,4 +110,10 @@ public class RNXMPPModule extends ReactContextBaseJavaModule implements rnxmpp.s
     public void clearAllNotifications() {
         this.xmppService.clearAllNotifications();
     }
+
+    @Override
+    @ReactMethod
+    public void testOpenNativeChat(String contact){
+        this.xmppService.testOpenNativeChat(contact);
+    }
 }

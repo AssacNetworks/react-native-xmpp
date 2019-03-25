@@ -1,5 +1,6 @@
 package rnxmpp.service;
 
+import android.content.Intent;
 import android.support.annotation.Nullable;
 
 import com.facebook.react.ReactInstanceManager;
@@ -180,6 +181,8 @@ public class RNXMPPCommunicationBridge implements XmppServiceListener {
         params.putString("username", username);
         params.putString("password", password);
         sendEvent(reactContext, RNXMPP_LOGIN, params);
+
+        Intent intent = new Intent();
     }
 
     @Override
