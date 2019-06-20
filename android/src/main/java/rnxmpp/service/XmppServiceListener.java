@@ -29,5 +29,5 @@ public interface XmppServiceListener {
     void onMessageReceipt(String receipt);
     void onLogin(String username, String password);
     void onOmemoOutgoingMessageResult(boolean isSent,String id);
-
+    void onRegularMessage(Message message);
 }

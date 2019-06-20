@@ -5,6 +5,7 @@ var RNXMPP = NativeModules.RNXMPP;
 
 var map = {
     'message' : 'RNXMPPMessage',
+    'regularMessage' : 'RNXMPPRegularMessage',
     'notificationOpened' : 'RNXMPPNotificationOpened',
     'iq': 'RNXMPPIQ',
     'presence': 'RNXMPPPresence',

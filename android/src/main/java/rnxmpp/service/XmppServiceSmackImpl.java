@@ -14,11 +14,13 @@ import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.view.WindowManager;
 
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReadableArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-
+import java.io.StringReader;
 import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.ConnectionListener;
 import org.jivesoftware.smack.SmackConfiguration;
@@ -60,10 +62,16 @@ import org.jivesoftware.smackx.omemo.trust.TrustState;
 import org.jivesoftware.smackx.push_notifications.PushNotificationsManager;
 import org.jivesoftware.smackx.receipts.DeliveryReceiptManager;
 import org.jivesoftware.smackx.receipts.ReceiptReceivedListener;
+import org.jivesoftware.smackx.search.ReportedData;
+import org.jivesoftware.smackx.search.UserSearchManager;
+import org.jivesoftware.smackx.xdata.Form;
+import org.jivesoftware.smackx.xdata.FormField;
 import org.jxmpp.jid.EntityBareJid;
 import org.jxmpp.jid.Jid;
 import org.jxmpp.jid.impl.JidCreate;
 import org.jxmpp.stringprep.XmppStringprepException;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -74,9 +82,13 @@ import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.Date;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -85,6 +97,8 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import rnxmpp.R;
 import rnxmpp.database.MessagesDbHelper;
@@ -99,6 +113,9 @@ import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIB
  */
 public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, StanzaListener, ConnectionListener, ChatMessageListener, RosterLoadedListener {
 
+    public static final String JSON_TEXT = "text";
+    public static final String JSON_ID = "_id";
+    public static final String JSON_CREATED_AT = "createdAt";
     XmppServiceListener xmppServiceListener;
     Logger logger = Logger.getLogger(XmppServiceSmackImpl.class.getName());
     DeliveryReceiptManager deliveryReceiptManager;
@@ -108,10 +125,12 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
     Roster roster;
     List<String> trustedHosts = new ArrayList<>();
     String password;
+    String extension;
     private ReactApplicationContext reactApplicationContext;
     private final String CHAR_LIST = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
     private HashMap<Chat, Message> lostMessages = null;
     private boolean isOmemoInitialized = false;
+    private String ENCRYPTED_XML_TAG = "encrypted";
 //    FileTransferManager manager;
 
     private OmemoTrustCallback trustCallback = new OmemoTrustCallback() {
@@ -351,74 +370,163 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
         displayNotification(messageText, contactAsExtension, messageUrl != null);
     }
 
-    @Override
-    public void message(String text, String to, String id, String thread) {
-        String chatIdentifier = (thread == null ? to : thread);
-
-        ChatManager chatManager = ChatManager.getInstanceFor(connection);
-        Chat chat = chatManager.getThreadChat(chatIdentifier);
-        EntityBareJid recipientJid = null;
-        if (chat == null) {
-            try {
-                recipientJid = JidCreate.entityBareFrom(to);
-                if (thread == null) {
-                    chat = chatManager.createChat(JidCreate.entityBareFrom(to), this);
-                } else {
-                    chat = chatManager.createChat(JidCreate.entityBareFrom(to), thread, this);
-                }
-            } catch (XmppStringprepException e) {
-                e.printStackTrace();
-            }
-        }
-
-        OmemoMessage.Sent encrypted = null;
+    private boolean userExists(String user) {
+        UserSearchManager search = new UserSearchManager(connection);
+        Form searchForm = null;
+        ReportedData data = null;
         try {
-            omemoManager.requestDeviceListUpdateFor(recipientJid);
-            for (OmemoDevice device : omemoManager.getDevicesOf(recipientJid)) {
-                OmemoFingerprint fingerprint = omemoManager.getFingerprint(device);
-                omemoManager.trustOmemoIdentity(device, fingerprint);
-            }
+            searchForm = search
+                    .getSearchForm(connection.getXMPPServiceDomain());
 
-            encrypted = omemoManager.encrypt(recipientJid, text);
-        }
-        // In case of undecided devices
-        catch (UndecidedOmemoIdentityException e) {
-            try {
-                omemoManager.purgeDeviceList();
-            } catch (Exception exception) {
-                logger.log(Level.SEVERE, "Exception: ", e);
-            }
-            for (OmemoDevice device : e.getUndecidedDevices()) {
-                try {
-                    omemoManager.trustOmemoIdentity(device, omemoManager.getFingerprint(device));
-                } catch (Exception exception) {
-                    exception.printStackTrace();
-                }
-            }
+            org.jivesoftware.smackx.xdata.Form answerForm = searchForm.createAnswerForm();
+            answerForm.setAnswer("email", user);
+            FormField formField = new FormField();
+            formField.addValue(user);
+            formField.setLabel("email");
+            answerForm.addField(formField);
 
-            try {
-                encrypted = omemoManager.encrypt(recipientJid, text);
-            } catch (Exception e1) {
-                xmppServiceListener.onOmemoOutgoingMessageResult(false, id);
-                e1.printStackTrace();
-            }
-        } catch (Exception e) {
-            xmppServiceListener.onOmemoOutgoingMessageResult(false, id);
+            data = search
+                    .getSearchResults(answerForm, connection.getXMPPServiceDomain());
+
+        } catch (SmackException.NoResponseException e) {
+            e.printStackTrace();
+        } catch (XMPPException.XMPPErrorException e) {
+            e.printStackTrace();
+        } catch (SmackException.NotConnectedException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
-        //send
-        if (encrypted != null) {
+        if (data != null) {
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public void message(String text, String to, String id, String thread) {
+        if (!userExists(to)) {
+            xmppServiceListener.onOmemoOutgoingMessageResult(false, id);
+        } else {
+            String chatIdentifier = (thread == null ? to : thread);
+
+            ChatManager chatManager = ChatManager.getInstanceFor(connection);
+            Chat chat = chatManager.getThreadChat(chatIdentifier);
+            EntityBareJid recipientJid = null;
+            if (chat == null) {
+                try {
+                    recipientJid = JidCreate.entityBareFrom(to);
+                    if (thread == null) {
+                        chat = chatManager.createChat(JidCreate.entityBareFrom(to), this);
+                    } else {
+                        chat = chatManager.createChat(JidCreate.entityBareFrom(to), thread, this);
+                    }
+                } catch (XmppStringprepException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            OmemoMessage.Sent encrypted = null;
             try {
-                Message message = encrypted.asMessage(recipientJid);
-                message.setStanzaId(id);
-                chat.sendMessage(message);
-                xmppServiceListener.onOmemoOutgoingMessageResult(true, id);
-            } catch (SmackException | InterruptedException e) {
-                xmppServiceListener.onOmemoOutgoingMessageResult(false, id);
-                logger.log(Level.WARNING, "Could not send message", e);
+                omemoManager.requestDeviceListUpdateFor(recipientJid);
+
+                Set<OmemoDevice> deviceList = omemoManager.getDevicesOf(recipientJid);
+
+                if (deviceList.size() == 0)
+                {
+                    sendRegularMessage(text, recipientJid, chat, id);
+                }
+                else
+                {
+                    for (OmemoDevice device : deviceList) {
+                        OmemoFingerprint fingerprint = omemoManager.getFingerprint(device);
+                        omemoManager.trustOmemoIdentity(device, fingerprint);
+                    }
+
+                    encrypted = omemoManager.encrypt(recipientJid, text);
+                }
+            }
+            // In case of undecided devices
+            catch (UndecidedOmemoIdentityException e) {
+                try {
+                    omemoManager.purgeDeviceList();
+                } catch (Exception exception) {
+                    logger.log(Level.SEVERE, "Exception: ", e);
+                }
+                for (OmemoDevice device : e.getUndecidedDevices()) {
+                    try {
+                        omemoManager.trustOmemoIdentity(device, omemoManager.getFingerprint(device));
+                    } catch (Exception exception) {
+                        exception.printStackTrace();
+                    }
+                }
+
+                try {
+                    encrypted = omemoManager.encrypt(recipientJid, text);
+                } catch (Exception e1) {
+                    xmppServiceListener.onOmemoOutgoingMessageResult(false, id);
+                    e1.printStackTrace();
+                }
+            } catch (Exception e) {
+                sendRegularMessage(text, recipientJid, chat, id);
+            }
+
+            //send
+            if (encrypted != null) {
+                try {
+                    Message message = encrypted.asMessage(recipientJid);
+                    message.setStanzaId(id);
+                    chat.sendMessage(message);
+                    xmppServiceListener.onOmemoOutgoingMessageResult(true, id);
+                } catch (SmackException | InterruptedException e) {
+                    xmppServiceListener.onOmemoOutgoingMessageResult(false, id);
+                    logger.log(Level.WARNING, "Could not send message", e);
+                }
             }
         }
+    }
+
+    private void sendRegularMessage(
+            String text,
+            EntityBareJid recipient,
+            Chat chat,
+            String id
+    ) {
+        String newMessageBody = getMessageBodyForIos(text);
+
+        Message messageStanza = new Message(recipient, Message.Type.chat);
+        messageStanza.setBody(newMessageBody);
+
+        try {
+            chat.sendMessage(messageStanza);
+            xmppServiceListener.onOmemoOutgoingMessageResult(true, id);
+        } catch (SmackException.NotConnectedException e) {
+            xmppServiceListener.onOmemoOutgoingMessageResult(false, id);
+        } catch (InterruptedException e) {
+            xmppServiceListener.onOmemoOutgoingMessageResult(false, id);
+        }
+    }
+
+    private String getMessageBodyForIos(String text) {
+        JsonObject newMessageBody = new JsonObject();
+
+        JsonObject messageJsonObject = new JsonParser().parse(text).getAsJsonObject();
+
+        String messageText = messageJsonObject.get(JSON_TEXT).getAsString();
+        String messageId = messageJsonObject.get(JSON_ID).getAsString();
+
+        SimpleDateFormat newFormat = new SimpleDateFormat(
+                "yyyy-MM-dd'T'HH:mm:ss.SSSZZZ", Locale.US
+        );
+
+        Date dateFromMessage = new Date();
+
+        newMessageBody.addProperty(JSON_TEXT,messageText);
+        newMessageBody.addProperty(JSON_CREATED_AT,newFormat.format(dateFromMessage));
+        newMessageBody.addProperty(JSON_ID,messageId);
+
+        return newMessageBody.toString();
     }
 
     private String generateRandomString() {
@@ -635,9 +743,65 @@ public class XmppServiceSmackImpl implements XmppService, ChatManagerListener, S
     @Override
     public void processMessage(Chat chat, Message message) {
         //Meaning message was received before omemo initialized
-        if (!isOmemoInitialized) {
-            lostMessages.put(chat, message);
+        if (isEncryptedMessage(message.toXML().toString()))
+        {
+            if (!isOmemoInitialized) {
+                lostMessages.put(chat, message);
+            }
         }
+        else
+        {
+            if (appIsInForground()) {
+                xmppServiceListener.onRegularMessage(message);
+            } else {
+                insertRegularMessageToDB(message);
+            }
+        }
+    }
+
+    private void insertRegularMessageToDB(Message message) {
+        MessagesDbHelper dbHelper = new MessagesDbHelper(reactApplicationContext);
+
+        String fullContactString = message.getFrom().toString();
+        String contactAsExtension = fullContactString.substring(0, fullContactString.indexOf("@"));
+
+        JsonObject messageJsonObject = new JsonParser().parse(message.getBody()).getAsJsonObject();
+
+        String messageText = messageJsonObject.get("text").getAsString();
+        String createdAt = messageJsonObject.get("createdAt").getAsString();
+        String messageId = messageJsonObject.get("_id").getAsString();
+        String messageUrl = null;
+        String messageKey = null;
+
+        try {
+            messageUrl = messageJsonObject.get("url").getAsString();
+            messageKey = messageJsonObject.get("key").getAsString();
+        } catch (Exception e) {
+        }
+
+        int chatId = dbHelper.getChatIdForContactOfMessage(contactAsExtension, messageText, createdAt);
+
+        dbHelper.insertMessage(messageId, messageText, createdAt, contactAsExtension, getExtension(), messageUrl, chatId, messageKey);
+
+        dbHelper.closeTransaction();
+
+        displayNotification(messageText, contactAsExtension, messageUrl != null);
+    }
+
+    private Integer getExtension() {
+        return Integer.valueOf(connection.getUser().getLocalpart().toString());
+    }
+
+    private boolean isEncryptedMessage(String messageAsXML) {
+        DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+        Document inputDoc = null;
+        try {
+            inputDoc = documentBuilderFactory.newDocumentBuilder().parse(new InputSource(new StringReader(messageAsXML)));
+        } catch (ParserConfigurationException | SAXException | IOException e) {
+            e.printStackTrace();
+        }
+        NodeList nodeList = inputDoc.getElementsByTagName(ENCRYPTED_XML_TAG);
+        return nodeList.getLength() != 0;
     }
 
     @Override
